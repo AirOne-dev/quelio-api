@@ -1,0 +1,8 @@
+# Fichier de cache des données Kelio
+data.json
+
+# Fichier de configuration (contient l'URL de votre instance)
+config.php
+
+# Logs
+*.log

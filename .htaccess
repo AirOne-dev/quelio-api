@@ -1,0 +1,44 @@
+# Configuration Apache pour Quelio API
+# Ce fichier protège l'accès aux fichiers sensibles et n'autorise que l'accès à index.php
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Bloquer l'accès aux fichiers cachés (.git, .gitignore, .htaccess, etc.)
+    RewriteRule ^\.(.*)$ - [F,L]
+
+    # Bloquer l'accès aux fichiers de configuration
+    RewriteRule ^config\.php$ - [F,L]
+    RewriteRule ^config\.example\.php$ - [F,L]
+
+    # Bloquer l'accès au fichier de données
+    RewriteRule ^data\.json$ - [F,L]
+
+    # Bloquer l'accès aux fichiers README et documentation
+    RewriteRule ^README\.md$ - [F,L]
+
+    # Permettre uniquement l'accès à index.php
+    # Tout autre fichier PHP retournera une 404
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} !^/index\.php$
+    RewriteCond %{REQUEST_FILENAME} \.php$
+    RewriteRule .* - [R=404,L]
+</IfModule>
+
+# Désactiver l'affichage du listing des répertoires
+Options -Indexes
+
+# Protéger les fichiers sensibles (couche supplémentaire de sécurité)
+<FilesMatch "^(config\.php|config\.example\.php|data\.json|\.git.*|\.htaccess|composer\.(json|lock))$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Permettre l'accès à index.php uniquement
+<FilesMatch "^index\.php$">
+    Order allow,deny
+    Allow from all
+</FilesMatch>
+
+# Retourner 404 pour les fichiers inexistants au lieu de 403
+ErrorDocument 403 /index.php
