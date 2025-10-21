@@ -30,6 +30,7 @@ cp config.example.php config.php
 'kelio_url' => 'https://your-company.kelio.io',
 ```
 Remplacez par l'URL de votre instance Kelio (par exemple : `https://entreprise.kelio.io`).
+<br /><br />
 
 ### Paramètres optionnels
 
@@ -37,23 +38,27 @@ Remplacez par l'URL de votre instance Kelio (par exemple : `https://entreprise.k
 'pause_time' => 7, // Durée de la pause en minutes
 ```
 Durée de la pause à ajouter au calcul des heures payées (par défaut 7 minutes par pause).
+<br /><br />
 
 ```php
 'start_limit_minutes' => 8 * 60 + 30, // 8h30
 'end_limit_minutes' => 18 * 60 + 30,   // 18h30
 ```
 Heures de début et fin de journée. Les badgeages en dehors de ces limites seront ramenés à ces valeurs.
+<br /><br />
 
 ```php
 'morning_break_threshold' => 11 * 60,  // 11h00
 'afternoon_break_threshold' => 16 * 60, // 16h00
 ```
 Heures à partir desquelles les pauses sont ajoutées au calcul des heures payées.
+<br /><br />
 
 ```php
 'enable_form_access' => true, // true ou false
 ```
 Active ou désactive l'accès au formulaire HTML via GET. Si `false`, seul l'accès POST (API) est autorisé. **Recommandé : `false` pour un usage en production** pour des raisons de sécurité.
+<br /><br />
 
 ### Fichier de cache
 
