@@ -102,12 +102,13 @@ function loadSavedData(): array
  * @param array $hours
  * @param string $totalEffective
  * @param string $totalPaid
+ * @param string|null $token
  * @return bool
  */
-function saveData(string $username, array $hours, string $totalEffective, string $totalPaid): bool
+function saveData(string $username, array $hours, string $totalEffective, string $totalPaid, ?string $token = null): bool
 {
     global $dataFile;
-    
+
     try {
         // Ensure directory exists and is writable
         $dir = dirname($dataFile);
@@ -117,39 +118,164 @@ function saveData(string $username, array $hours, string $totalEffective, string
                 return false;
             }
         }
-        
+
         if (!is_writable($dir)) {
             error_log("Directory not writable: $dir");
             return false;
         }
-        
+
         $allData = loadSavedData();
-        
+
+        // Preserve existing preferences and token if they exist
+        $existingPreferences = $allData[$username]['preferences'] ?? [];
+        $existingToken = $allData[$username]['session_token'] ?? null;
+
         $allData[$username] = [
             'hours' => $hours,
             'total_effective' => $totalEffective,
             'total_paid' => $totalPaid,
-            'last_save' => date('d/m/Y H:i:s')
+            'last_save' => date('d/m/Y H:i:s'),
+            'preferences' => $existingPreferences,
+            'session_token' => $token ?? $existingToken
         ];
-        
+
         $jsonData = json_encode($allData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-        
+
         if ($jsonData === false) {
             error_log("Failed to encode JSON data");
             return false;
         }
-        
+
         $result = file_put_contents($dataFile, $jsonData, LOCK_EX);
         if ($result === false) {
             error_log("Failed to write file: $dataFile");
             return false;
         }
-        
+
         return true;
     } catch (\Throwable $e) {
         error_log("Save data error: " . $e->getMessage());
         return false;
     }
+}
+
+/**
+ * Generate a session token for a user
+ * @param string $username
+ * @param string $password
+ * @return string
+ */
+function generateToken(string $username, string $password): string
+{
+    $timestamp = time();
+    $data = $username . ':' . $password . ':' . $timestamp;
+    return hash('sha256', $data) . ':' . $timestamp;
+}
+
+/**
+ * Validate a session token
+ * @param string $username
+ * @param string $token
+ * @return bool
+ */
+function validateToken(string $username, string $token): bool
+{
+    global $dataFile;
+
+    if (empty($token)) {
+        return false;
+    }
+
+    try {
+        $allData = loadSavedData();
+
+        if (!isset($allData[$username]['session_token'])) {
+            return false;
+        }
+
+        $savedToken = $allData[$username]['session_token'];
+
+        // Check if token matches
+        if ($savedToken !== $token) {
+            return false;
+        }
+
+        return true;
+    } catch (\Throwable $e) {
+        error_log("Token validation error: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Save user preferences
+ * @param string $username
+ * @param array $preferences
+ * @return bool
+ */
+function saveUserPreferences(string $username, array $preferences): bool
+{
+    global $dataFile;
+
+    try {
+        $dir = dirname($dataFile);
+        if (!is_dir($dir)) {
+            if (!mkdir($dir, 0755, true)) {
+                error_log("Failed to create directory: $dir");
+                return false;
+            }
+        }
+
+        if (!is_writable($dir)) {
+            error_log("Directory not writable: $dir");
+            return false;
+        }
+
+        $allData = loadSavedData();
+
+        // Initialize user data if doesn't exist
+        if (!isset($allData[$username])) {
+            $allData[$username] = [
+                'hours' => [],
+                'total_effective' => '00:00',
+                'total_paid' => '00:00',
+                'last_save' => date('d/m/Y H:i:s')
+            ];
+        }
+
+        // Merge new preferences with existing ones
+        $existingPreferences = $allData[$username]['preferences'] ?? [];
+        $allData[$username]['preferences'] = array_merge($existingPreferences, $preferences);
+
+        $jsonData = json_encode($allData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+
+        if ($jsonData === false) {
+            error_log("Failed to encode JSON data");
+            return false;
+        }
+
+        $result = file_put_contents($dataFile, $jsonData, LOCK_EX);
+        if ($result === false) {
+            error_log("Failed to write file: $dataFile");
+            return false;
+        }
+
+        return true;
+    } catch (\Throwable $e) {
+        error_log("Save preferences error: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Get user preferences
+ * @param string $username
+ * @return array
+ */
+function getUserPreferences(string $username): array
+{
+    $allData = loadSavedData();
+    return $allData[$username]['preferences'] ?? [];
 }
 
 /**
@@ -386,10 +512,49 @@ function calculateTotalWorkingHours(array $arrayData, int $pause = 0): string
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
-    
+
+    $action = $_POST['action'] ?? 'login';
     $username = $_POST['username'] ?? '';
+
+    // Handle preferences update
+    if ($action === 'update_preferences') {
+        if (empty($username)) {
+            die(json_encode(['error' => 'username required'], JSON_PRETTY_PRINT));
+        }
+
+        $token = $_POST['token'] ?? '';
+
+        // Validate token
+        if (!validateToken($username, $token)) {
+            http_response_code(401);
+            die(json_encode(['error' => 'Invalid or expired token'], JSON_PRETTY_PRINT));
+        }
+
+        $preferences = [];
+
+        if (isset($_POST['theme'])) {
+            $preferences['theme'] = $_POST['theme'];
+        }
+
+        if (isset($_POST['minutes_objective'])) {
+            $preferences['minutes_objective'] = intval($_POST['minutes_objective']);
+        }
+
+        $success = saveUserPreferences($username, $preferences);
+
+        if ($success) {
+            die(json_encode([
+                'success' => true,
+                'preferences' => getUserPreferences($username)
+            ], JSON_PRETTY_PRINT));
+        } else {
+            die(json_encode(['error' => 'Failed to save preferences'], JSON_PRETTY_PRINT));
+        }
+    }
+
+    // Handle login (default action)
     $password = $_POST['password'] ?? '';
-    
+
     if (empty($username) || empty($password)) {
         die(json_encode(['error' => 'username and password required'], JSON_PRETTY_PRINT));
     }
@@ -452,32 +617,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $totalEffective = calculateTotalWorkingHours($hours);
         $totalPaid = calculateTotalWorkingHours($hours, $pauseTime);
-        
-        // Save the successful result
-        $saveSuccess = saveData($username, $hours, $totalEffective, $totalPaid);
-        
+
+        // Generate session token
+        $token = generateToken($username, $password);
+
+        // Save the successful result with token
+        $saveSuccess = saveData($username, $hours, $totalEffective, $totalPaid, $token);
+
+        // Get user preferences
+        $preferences = getUserPreferences($username);
+
         $response = [
             'hours' => $hours,
             'total_effective' => $totalEffective,
             'total_paid' => $totalPaid,
+            'preferences' => $preferences,
+            'token' => $token,
             'data_saved' => $saveSuccess,
             'data_file_path' => $dataFile
         ];
-        
+
         die(json_encode($response, JSON_PRETTY_PRINT));
         
     } catch (\Throwable $th) {
         // Try to get fallback data
         $savedData = getSavedDataForUser($username);
-        
+
         if ($savedData !== null) {
+            $preferences = getUserPreferences($username);
+
+            // Use existing token if available, otherwise generate a new one
+            $token = $savedData['session_token'] ?? generateToken($username, $password);
+
+            // Update token if it was just generated
+            if (!isset($savedData['session_token'])) {
+                saveData($username, $savedData['hours'], $savedData['total_effective'], $savedData['total_paid'], $token);
+            }
+
             $response = [
                 'error' => 'Failed to fetch fresh data, using cached data',
                 'fallback' => true,
                 'hours' => $savedData['hours'],
                 'total_effective' => $savedData['total_effective'],
                 'total_paid' => $savedData['total_paid'],
-                'last_save' => $savedData['last_save']
+                'last_save' => $savedData['last_save'],
+                'preferences' => $preferences,
+                'token' => $token
             ];
             die(json_encode($response, JSON_PRETTY_PRINT));
         } else {
