@@ -225,6 +225,8 @@ Si l'accès est désactivé, vous recevrez une erreur 403 :
 
 ### API (POST)
 
+#### Authentification et récupération des heures
+
 Envoyez une requête POST avec vos identifiants Kelio :
 
 #### Avec cURL
@@ -251,9 +253,31 @@ password="VOTRE_MOT_DE_PASSE_KELIO"
   - `username` : votre identifiant Kelio
   - `password` : votre mot de passe Kelio
 
+#### Mise à jour des préférences utilisateur
+
+Pour mettre à jour les préférences (thème, heures hebdomadaires), utilisez l'endpoint avec un token de session :
+
+```bash
+curl --location 'http://votre-serveur.com/index.php' \
+--form 'action="update_preferences"' \
+--form 'username="VOTRE_IDENTIFIANT"' \
+--form 'token="VOTRE_TOKEN_DE_SESSION"' \
+--form 'theme="ocean"' \
+--form 'minutes_objective="2280"'
+```
+
+**Paramètres** :
+- `action` : doit être `update_preferences`
+- `username` : votre identifiant Kelio
+- `token` : token de session obtenu lors de l'authentification
+- `theme` (optionnel) : nom du thème (`midnight`, `light`, `abyss`, `ocean`, `forest`, `sunset`, `lavender`)
+- `minutes_objective` (optionnel) : objectif hebdomadaire en minutes (ex: 2280 = 38h)
+
+**Sécurité** : Le token est obligatoire et est validé côté serveur. Sans token valide, la requête sera refusée avec une erreur 401.
+
 ## Réponse de l'API
 
-### Réponse en cas de succès
+### Réponse en cas de succès (login)
 
 ```json
 {
@@ -264,6 +288,11 @@ password="VOTRE_MOT_DE_PASSE_KELIO"
     },
     "total_effective": "15:45",
     "total_paid": "16:13",
+    "preferences": {
+        "theme": "ocean",
+        "minutes_objective": 2280
+    },
+    "token": "a1b2c3d4e5f6...abc123:1234567890",
     "data_saved": true,
     "data_file_path": "/tmp/kelio_data.json"
 }
@@ -274,8 +303,22 @@ password="VOTRE_MOT_DE_PASSE_KELIO"
 - **hours** : Objet contenant les heures badgées par jour (format `JJ-MM-AAAA`)
 - **total_effective** : Total des heures travaillées sans les pauses (format `HH:MM`)
 - **total_paid** : Total des heures payées avec les pauses incluses (format `HH:MM`)
+- **preferences** : Préférences utilisateur (thème, objectif hebdomadaire)
+- **token** : Token de session pour les requêtes de mise à jour des préférences (valide jusqu'au changement de mot de passe Kelio)
 - **data_saved** : Indique si les données ont été sauvegardées en cache (`true`/`false`)
 - **data_file_path** : Chemin du fichier de cache
+
+### Réponse en cas de succès (update_preferences)
+
+```json
+{
+    "success": true,
+    "preferences": {
+        "theme": "ocean",
+        "minutes_objective": 2280
+    }
+}
+```
 
 ### Réponse avec données en cache (fallback)
 
@@ -290,11 +333,18 @@ Si la connexion à Kelio échoue mais que des données en cache existent :
     },
     "total_effective": "08:00",
     "total_paid": "08:14",
-    "last_save": "21/10/2024 18:45:32"
+    "last_save": "21/10/2024 18:45:32",
+    "preferences": {
+        "theme": "ocean",
+        "minutes_objective": 2280
+    },
+    "token": "a1b2c3d4e5f6...abc123:1234567890"
 }
 ```
 
 ### Réponse en cas d'erreur
+
+#### Erreurs d'authentification
 
 ```json
 {
@@ -302,13 +352,23 @@ Si la connexion à Kelio échoue mais que des données en cache existent :
 }
 ```
 
-ou
-
 ```json
 {
     "error": "No fresh data available and no cached data found"
 }
 ```
+
+#### Erreurs de token (update_preferences)
+
+```json
+{
+    "error": "Invalid or expired token"
+}
+```
+
+Statut HTTP : `401 Unauthorized`
+
+**Note** : Un token devient invalide si le mot de passe Kelio change. L'utilisateur doit se reconnecter pour obtenir un nouveau token.
 
 ## Fonctionnement détaillé
 
@@ -326,13 +386,30 @@ Le script applique les règles suivantes :
 - Les données sont sauvegardées après chaque récupération réussie
 - En cas d'échec de connexion, les données en cache sont retournées
 - Le cache inclut la date et l'heure de la dernière sauvegarde
+- Les préférences utilisateur sont également sauvegardées en cache
 
 ### Sécurité
 
-- Les mots de passe ne sont jamais stockés
-- Seules les données d'heures badgées sont mises en cache
+#### Authentification Kelio
+- Les mots de passe ne sont jamais stockés en clair
 - Le script utilise les tokens CSRF de Kelio pour l'authentification
 - Le formulaire HTML peut être désactivé (`enable_form_access = false`) pour limiter l'accès à l'API uniquement
+
+#### Tokens de session
+- **Génération** : Un token unique est généré à chaque connexion réussie
+- **Format** : SHA-256 hash du username, password et timestamp, suivi du timestamp
+- **Durée de vie** : Pas d'expiration automatique (Kelio force déjà le changement de mot de passe périodiquement)
+- **Sécurité** :
+  - Les tokens sont requis pour modifier les préférences utilisateur
+  - Chaque utilisateur a son propre token
+  - Les tokens sont validés côté serveur avant toute modification
+  - Un token invalide retourne une erreur 401
+  - Si le mot de passe Kelio change, le token devient automatiquement invalide (nouveau hash)
+
+#### Protection des données
+- Les données sont stockées dans `data.json` (non accessible via HTTP si configuré correctement)
+- Chaque utilisateur ne peut modifier que ses propres préférences (via token)
+- Les préférences incluent : thème de l'interface, objectif d'heures hebdomadaires
 
 ## Exemples d'utilisation
 
