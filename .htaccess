@@ -17,6 +17,18 @@
     # Bloquer l'accès aux fichiers README et documentation
     RewriteRule ^README\.md$ - [F,L]
 
+    # Rediriger manifest.json vers manifest.php avec les paramètres
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^manifest\.json$ manifest.php [QSA,L]
+
+    # Rediriger icon.svg vers icon.php avec les paramètres
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^icon\.svg$ icon.php [QSA,L]
+
+    # Permettre l'accès à manifest.php et icon.php
+    RewriteCond %{REQUEST_URI} ^/(manifest|icon)\.php$
+    RewriteRule .* - [L]
+
     # Permettre uniquement l'accès à index.php
     # Tout autre fichier PHP retournera une 404
     RewriteCond %{REQUEST_FILENAME} !-d
@@ -34,8 +46,8 @@ Options -Indexes
     Deny from all
 </FilesMatch>
 
-# Permettre l'accès à index.php uniquement
-<FilesMatch "^index\.php$">
+# Permettre l'accès à index.php, manifest.php et icon.php
+<FilesMatch "^(index|manifest|icon)\.php$">
     Order allow,deny
     Allow from all
 </FilesMatch>
