@@ -10,16 +10,11 @@
  * - Action Controllers: ?action= parameters dispatch to methods
  *
  * Routes examples:
- * GET  /               -> HomeController::indexAction()
- * POST /               -> LoginController::dispatch('login')
- * POST /?action=update_preferences -> LoginController::updatePreferencesAction()
+ * POST /               -> BaseGuestController::dispatch('login')
+ * POST /?action=update_preferences -> BaseController::updatePreferencesAction()
  * GET  /icon.svg       -> IconController::indexAction()
  * GET  /manifest.json  -> ManifestController::indexAction()
  */
-
-// ========================================
-// 1. Bootstrap Application
-// ========================================
 
 // Load core dependencies (only 3 files needed!)
 require_once __DIR__ . '/src/core/Container.php';
@@ -45,7 +40,9 @@ $requiredKeys = [
     'encryption_key' => 'string',
     'debug_mode' => 'boolean',
     'rate_limit_max_attempts' => 'integer',
-    'rate_limit_window' => 'integer'
+    'rate_limit_window' => 'integer',
+    'admin_username' => 'string',
+    'admin_password' => 'string'
 ];
 
 $errors = [];
@@ -73,31 +70,6 @@ foreach ($requiredKeys as $key => $expectedType) {
     }
 }
 
-// Validate specific values
-if (isset($config['encryption_key']) && strlen($config['encryption_key']) < 16) {
-    $errors[] = "Configuration 'encryption_key' must be at least 16 characters long";
-}
-
-if (isset($config['pause_time']) && ($config['pause_time'] < 0 || $config['pause_time'] > 120)) {
-    $errors[] = "Configuration 'pause_time' must be between 0 and 120 minutes";
-}
-
-if (isset($config['start_limit_minutes']) && ($config['start_limit_minutes'] < 0 || $config['start_limit_minutes'] > 1440)) {
-    $errors[] = "Configuration 'start_limit_minutes' must be between 0 and 1440";
-}
-
-if (isset($config['end_limit_minutes']) && ($config['end_limit_minutes'] < 0 || $config['end_limit_minutes'] > 1440)) {
-    $errors[] = "Configuration 'end_limit_minutes' must be between 0 and 1440";
-}
-
-if (isset($config['rate_limit_max_attempts']) && $config['rate_limit_max_attempts'] < 1) {
-    $errors[] = "Configuration 'rate_limit_max_attempts' must be at least 1";
-}
-
-if (isset($config['rate_limit_window']) && $config['rate_limit_window'] < 1) {
-    $errors[] = "Configuration 'rate_limit_window' must be at least 1 second";
-}
-
 if (!empty($errors)) {
     http_response_code(500);
     header('Content-Type: application/json');
@@ -107,38 +79,14 @@ if (!empty($errors)) {
     ], JSON_PRETTY_PRINT));
 }
 
-// ========================================
-// 2. Configure Services (Auto-wiring)
-// ========================================
-
 $container = new Container();
-$serviceProvider = new ServiceProvider($container, $config);
-$serviceProvider->register();
 
-// ========================================
-// 3. Configure Routes (Convention-based)
-// ========================================
-
-$router = new Router();
-$router->setContainer($container);
-
-// Home (GET)
-$router->route('GET', '/', HomeController::class, [AuthMiddleware::class]);
-
-// Login/Auth (POST with actions)
-$router->route('POST', '/', LoginController::class, [AuthMiddleware::class]);
-
-// PWA Routes
-$router->route('GET', '/icon.svg', IconController::class);
-$router->route('GET', '/manifest.json', ManifestController::class);
-
-// ========================================
-// Example: Add a protected route
-// ========================================
-// $router->route('POST', '/stats', StatsController::class, [AuthMiddleware::class]);
-
-// ========================================
-// 4. Run Application
-// ========================================
-
-$router->run();
+(new ServiceProvider($container, $config))->register();
+(new Router())
+    ->setContainer($container)
+    ->get('/', BaseGuestController::class)
+    ->post('/', BaseController::class, [AuthMiddleware::class])
+    ->get('/icon.svg', IconController::class)
+    ->get('/manifest.json', ManifestController::class)
+    ->getAndPost('/data.json', DataController::class, [[AuthMiddleware::class, 'admin']])
+    ->run();

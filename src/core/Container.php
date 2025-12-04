@@ -24,10 +24,12 @@ class Container
      * @param string $name Service name
      * @param callable $factory Factory function
      */
-    public function singleton(string $name, callable $factory): void
+    public function singleton(string $name, callable $factory): self
     {
         $this->services[$name] = $factory;
         $this->singletons[$name] = null;
+
+        return $this;
     }
 
     /**
