@@ -14,14 +14,17 @@ Options -MultiViews -Indexes
     RewriteRule ^(config|config\.example)\.php$ - [F,L]
     RewriteRule ^(README\.md|composer\.(json|lock))$ - [F,L]
 
-    # Rediriger manifest.json, icon.svg et data.json vers index.php (le router gérera la route)
-    RewriteRule ^(manifest\.json|icon\.svg|data\.json)$ index.php [QSA,L]
-
     # Bloquer tous les fichiers PHP sauf index.php
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{REQUEST_URI} !^/index\.php$
+    RewriteCond %{REQUEST_URI} !^.*/index\.php$
     RewriteCond %{REQUEST_FILENAME} \.php$
-    RewriteRule .* - [R=404,L]
+    RewriteRule .* - [F,L]
+
+    # Rediriger toutes les requêtes vers index.php (front controller)
+    # Ne pas rediriger si le fichier existe (sauf PHP) ou si c'est un répertoire
+    RewriteCond %{REQUEST_FILENAME} !-f [OR]
+    RewriteCond %{REQUEST_FILENAME} \.php$
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [L]
 </IfModule>
 
 # Protéger les fichiers sensibles (couche supplémentaire de sécurité)
@@ -30,11 +33,14 @@ Options -MultiViews -Indexes
     Require all denied
 </FilesMatch>
 
-# Autoriser uniquement index.php
+# Autoriser index.php et interdire les autres fichiers PHP
 <FilesMatch "\.php$">
-    <If "%{REQUEST_URI} !~ m#^/index\.php$#">
-        Require all denied
+    <If "%{REQUEST_URI} =~ m#/index\.php$#">
+        Require all granted
     </If>
+    <Else>
+        Require all denied
+    </Else>
 </FilesMatch>
 
 # Retourner 404 pour les accès interdits
