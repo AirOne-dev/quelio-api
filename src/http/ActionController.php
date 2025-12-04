@@ -55,6 +55,21 @@ abstract class ActionController
      */
     protected function handleUnknownAction(string $action): void
     {
-        JsonResponse::error("Unknown action: $action", 400);
+        $methodName = $this->actionToMethod($action);
+
+        JsonResponse::error("Unknown action: $action", 400, [
+            'debug' => [
+                'controller_class' => get_class($this),
+                'requested_action' => $action,
+                'expected_method' => $methodName,
+                'method_exists' => method_exists($this, $methodName),
+                'available_methods' => array_filter(
+                    get_class_methods($this),
+                    fn($method) => str_ends_with($method, 'Action')
+                ),
+                'post_data' => array_keys($_POST),
+                'get_data' => array_keys($_GET),
+            ]
+        ]);
     }
 }
