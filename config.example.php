@@ -53,4 +53,25 @@ return [
      * Recommandé : false pour un usage en production (API uniquement)
      */
     'enable_form_access' => true,
+
+    /**
+     * Clé de chiffrement pour les tokens de session
+     * IMPORTANT : Changez cette clé pour votre installation !
+     * Utilisez une chaîne aléatoire de minimum 32 caractères
+     */
+    'encryption_key' => 'CHANGE-THIS-TO-A-RANDOM-SECRET-KEY-MIN-32-CHARS',
+
+    /**
+     * Mode debug pour le développement
+     * Si true, les fichiers JSON seront formatés avec indentation (JSON_PRETTY_PRINT)
+     * Si false, les fichiers seront minifiés pour optimiser les performances
+     */
+    'debug_mode' => false,
+
+    /**
+     * Durée maximale en secondes pour les tentatives de connexion par IP
+     * Rate limiting : nombre maximum de tentatives par période
+     */
+    'rate_limit_max_attempts' => 5,
+    'rate_limit_window' => 300, // 5 minutes
 ];
