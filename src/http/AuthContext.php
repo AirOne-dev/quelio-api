@@ -13,6 +13,8 @@ class AuthContext
     private ?string $jsessionid = null;
     private ?string $authenticatedWith = null;
     private bool $isAuthenticated = false;
+    private ?Auth $auth = null;
+    private ?Storage $storage = null;
 
     /**
      * Set authentication data from token
@@ -102,5 +104,63 @@ class AuthContext
     public function isCredentialsAuth(): bool
     {
         return $this->authenticatedWith === 'credentials';
+    }
+
+    /**
+     * Set Auth and Storage services for token management
+     */
+    public function setServices(Auth $auth, Storage $storage): void
+    {
+        $this->auth = $auth;
+        $this->storage = $storage;
+    }
+
+    /**
+     * Get or generate session token
+     * Returns existing token or generates a new one if authenticated with credentials
+     *
+     * @return string|null Token or null if not authenticated
+     */
+    public function getOrGenerateToken(): ?string
+    {
+        if (!$this->isAuthenticated) {
+            return null;
+        }
+
+        // If token already exists (token auth), return it
+        if ($this->token !== null) {
+            return $this->token;
+        }
+
+        // Otherwise, get from storage or generate new one (credentials auth)
+        if ($this->auth === null || $this->storage === null) {
+            throw new \Exception('Auth and Storage services must be set via setServices()');
+        }
+
+        $userData = $this->storage->getUserData($this->username);
+        $existingToken = $userData['session_token'] ?? null;
+
+        // If token exists in storage, return it
+        if ($existingToken !== null) {
+            $this->token = $existingToken;
+            return $existingToken;
+        }
+
+        // Generate new token
+        $newToken = $this->auth->generateToken($this->username, $this->password);
+        $this->token = $newToken;
+
+        // Save the new token if user data exists
+        if (isset($userData['hours'], $userData['total_effective'], $userData['total_paid'])) {
+            $this->storage->saveUserData(
+                $this->username,
+                $userData['hours'],
+                $userData['total_effective'],
+                $userData['total_paid'],
+                $newToken
+            );
+        }
+
+        return $newToken;
     }
 }

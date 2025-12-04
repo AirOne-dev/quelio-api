@@ -6,7 +6,8 @@ class AuthMiddleware
         private Auth $auth,
         private KelioClient $kelioClient,
         private AuthContext $authContext,
-        private RateLimiter $rateLimiter
+        private RateLimiter $rateLimiter,
+        private array $config
     ) {
     }
 
@@ -110,5 +111,17 @@ class AuthMiddleware
             JsonResponse::unauthorized($errorMessage);
             return true; // Stop execution
         }
+    }
+
+    public function admin(): ?bool {
+        $username = $_POST['username'] ?? $_GET['username'] ?? '';
+        $password = $_POST['password'] ?? $_GET['password'] ?? '';
+
+        if ($username === $this->config['admin_username'] && $password === $this->config['admin_password']) {
+            return null;
+        }
+
+        JsonResponse::unauthorized('Invalid username or password');
+        return true; // Stop execution
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-class LoginController extends ActionController
+class BaseController extends ActionController
 {
     public function __construct(
         private Storage $storage,
@@ -22,12 +22,6 @@ class LoginController extends ActionController
      */
     public function loginAction(): void
     {
-        if (!$this->authContext->isAuthenticated()) {
-            JsonResponse::error('Not authenticated', 401);
-            return;
-        }
-
-        // Both token and credentials authentication now fetch fresh data
         $this->fetchFreshData();
     }
 
@@ -39,19 +33,13 @@ class LoginController extends ActionController
      */
     public function updatePreferencesAction(): void
     {
-        if (!$this->authContext->isAuthenticated()) {
-            JsonResponse::error('Not authenticated', 401);
-            return;
-        }
-
         $username = $this->authContext->getUsername();
-
         $preferences = [];
         $errors = [];
 
         if (isset($_POST['theme'])) {
             $theme = trim($_POST['theme']);
-            // Validate theme (alphanumeric, underscore, dash only)
+
             if (preg_match('/^[a-zA-Z0-9_-]+$/', $theme) && strlen($theme) <= 50) {
                 $preferences['theme'] = $theme;
             } else {
@@ -61,11 +49,11 @@ class LoginController extends ActionController
 
         if (isset($_POST['minutes_objective'])) {
             $minutesObjective = intval($_POST['minutes_objective']);
-            // Validate minutes_objective (positive integer, reasonable range)
-            if ($minutesObjective >= 0 && $minutesObjective <= 1440) { // 0 to 24 hours
+
+            if ($minutesObjective > 0) {
                 $preferences['minutes_objective'] = $minutesObjective;
             } else {
-                $errors['minutes_objective'] = 'Invalid minutes objective. Must be between 0 and 1440 (24 hours)';
+                $errors['minutes_objective'] = 'Invalid minutes objective. Must be > 0';
             }
         }
 
@@ -85,7 +73,8 @@ class LoginController extends ActionController
             JsonResponse::success([
                 'success' => true,
                 'username' => $username,
-                'preferences' => $this->storage->getUserPreferences($username)
+                'preferences' => $this->storage->getUserPreferences($username),
+                'token' => $this->authContext->getOrGenerateToken(),
             ]);
         } else {
             JsonResponse::error('Failed to save preferences', 500);
@@ -100,6 +89,7 @@ class LoginController extends ActionController
         $username = $this->authContext->getUsername();
         $password = $this->authContext->getPassword();
         $jsessionid = $this->authContext->getJSessionId();
+        $token = $this->authContext->getOrGenerateToken();
 
         try {
             // jsessionid already obtained by middleware, just use it
@@ -114,9 +104,6 @@ class LoginController extends ActionController
             // Calculate totals
             $totalEffective = $this->timeCalculator->calculateTotalWorkingHours($hours);
             $totalPaid = $this->timeCalculator->calculateTotalWorkingHours($hours, $this->config['pause_time']);
-
-            // Generate session token
-            $token = $this->auth->generateToken($username, $password);
 
             // Save the successful result with token
             $saveSuccess = $this->storage->saveUserData($username, $hours, $totalEffective, $totalPaid, $token);
@@ -149,20 +136,10 @@ class LoginController extends ActionController
     {
         $username = $this->authContext->getUsername();
         $password = $this->authContext->getPassword();
-
+        $token = $this->authContext->getOrGenerateToken();
         $savedData = $this->storage->getUserData($username);
 
         if ($savedData !== null) {
-            $preferences = $this->storage->getUserPreferences($username);
-
-            // Use existing token if available, otherwise generate a new one
-            $token = $savedData['session_token'] ?? $this->auth->generateToken($username, $password);
-
-            // Update token if it was just generated
-            if (!isset($savedData['session_token'])) {
-                $this->storage->saveUserData($username, $savedData['hours'], $savedData['total_effective'], $savedData['total_paid'], $token);
-            }
-
             JsonResponse::success([
                 'error' => 'Failed to fetch fresh data, using cached data',
                 'fallback' => true,

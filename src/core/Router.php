@@ -13,111 +13,65 @@ class Router
      * @param callable $handler Route handler
      * @param array $middlewares Optional middlewares for this route
      */
-    public function addRoute(string $method, string $path, callable $handler, array $middlewares = []): void
+    public function addRoute(string $method, string $path, string $controllerClass, array $middlewares = []): self
     {
         $this->routes[] = [
             'method' => strtoupper($method),
             'path' => $path,
-            'handler' => $handler,
-            'middlewares' => $middlewares
+            'handler' => fn() => $this->dispatchController($controllerClass, 'index'),
+            'middlewares' => array_map(function ($middlewareSpec) {
+                // If it's an array like [ClassName::class, 'methodName']
+                if (is_array($middlewareSpec) && count($middlewareSpec) === 2 && is_string($middlewareSpec[0]) && is_string($middlewareSpec[1])) {
+                    $middleware = $this->container->get($middlewareSpec[0]);
+                    return [$middleware, $middlewareSpec[1]];
+                }
+                // If it's just a class name string, use 'handle' method
+                if (is_string($middlewareSpec)) {
+                    $middleware = $this->container->get($middlewareSpec);
+                    return [$middleware, 'handle'];
+                }
+                // Otherwise return as-is (already a callable)
+                return $middlewareSpec;
+            }, $middlewares)
         ];
+
+        return $this;
     }
 
     /**
      * Add a GET route
      */
-    public function get(string $path, callable $handler, array $middlewares = []): void
+    public function get(string $path, string $controllerClass, array $middlewares = []): self
     {
-        $this->addRoute('GET', $path, $handler, $middlewares);
+        return $this->addRoute('GET', $path, $controllerClass, $middlewares);
     }
 
     /**
      * Add a POST route
      */
-    public function post(string $path, callable $handler, array $middlewares = []): void
+    public function post(string $path, string $controllerClass, array $middlewares = []): self
     {
-        $this->addRoute('POST', $path, $handler, $middlewares);
+        return $this->addRoute('POST', $path, $controllerClass, $middlewares);
     }
 
     /**
-     * Add a global middleware (runs on all routes)
+     * Add a GET and POST routes
      */
-    public function addMiddleware(callable $middleware): void
+    public function getAndPost(string $path, string $controllerClass, array $middlewares = []): self
     {
-        $this->middlewares[] = $middleware;
+        return $this
+            ->addRoute('GET', $path, $controllerClass, $middlewares)
+            ->addRoute('POST', $path, $controllerClass, $middlewares);
     }
 
     /**
      * Set the dependency injection container
      */
-    public function setContainer(Container $container): void
+    public function setContainer(Container $container): self
     {
         $this->container = $container;
-    }
 
-    /**
-     * Register a route with automatic controller instantiation
-     * Usage: $router->route('POST', '/path', ControllerClass::class, [OptionalMiddleware::class])
-     *
-     * @param string $method HTTP method (GET, POST, etc.)
-     * @param string $path Route path
-     * @param string $controllerClass Controller class name
-     * @param array $middlewares Optional middleware classes
-     */
-    public function route(string $method, string $path, string $controllerClass, array $middlewares = []): void
-    {
-        // Convert middleware classes to instances
-        $middlewareInstances = array_map(function ($middlewareClass) {
-            if (is_string($middlewareClass)) {
-                $middleware = $this->container->get($middlewareClass);
-                return [$middleware, 'handle'];
-            }
-            return $middlewareClass;
-        }, $middlewares);
-
-        $this->addRoute($method, $path, function () use ($controllerClass) {
-            $this->dispatchController($controllerClass, 'index');
-        }, $middlewareInstances);
-    }
-
-    /**
-     * Register a controller route with auto-routing (both GET and POST)
-     * Convention: /path -> PathController::indexAction() or dispatch()
-     *
-     * @param string $path Route path
-     * @param string $controllerClass Controller class name
-     * @param array $middlewares Optional middlewares
-     */
-    public function controller(string $path, string $controllerClass, array $middlewares = []): void
-    {
-        $this->route('GET', $path, $controllerClass, $middlewares);
-        $this->route('POST', $path, $controllerClass, $middlewares);
-    }
-
-    /**
-     * Dispatch to a controller action
-     */
-    private function dispatchController(string $controllerClass, string $defaultAction = 'index'): void
-    {
-        if ($this->container === null) {
-            throw new Exception("Container not set. Call setContainer() first.");
-        }
-
-        // Create controller instance with dependency injection
-        $controller = $this->container->createController($controllerClass);
-
-        // If controller extends ActionController, use dispatch
-        if ($controller instanceof ActionController) {
-            $controller->dispatch($defaultAction);
-        } else {
-            // Call the action directly
-            $actionMethod = $defaultAction . 'Action';
-            if (method_exists($controller, $actionMethod)) {
-                $controller->$actionMethod();
-            } else {
-                throw new Exception("Action not found: $controllerClass::$actionMethod");
-            }
-        }
+        return $this;
     }
 
     /**
@@ -184,6 +138,32 @@ class Router
     }
 
     /**
+     * Dispatch to a controller action
+     */
+    private function dispatchController(string $controllerClass, string $defaultAction = 'index'): void
+    {
+        if ($this->container === null) {
+            throw new Exception("Container not set. Call setContainer() first.");
+        }
+
+        // Create controller instance with dependency injection
+        $controller = $this->container->createController($controllerClass);
+
+        // If controller extends ActionController, use dispatch
+        if ($controller instanceof ActionController) {
+            $controller->dispatch($defaultAction);
+        } else {
+            // Call the action directly
+            $actionMethod = $defaultAction . 'Action';
+            if (method_exists($controller, $actionMethod)) {
+                $controller->$actionMethod();
+            } else {
+                throw new Exception("Action not found: $controllerClass::$actionMethod");
+            }
+        }
+    }
+
+    /**
      * Match a route path with the current path
      */
     private function matchPath(string $routePath, string $currentPath): bool
@@ -206,6 +186,6 @@ class Router
      */
     private function notFound(): void
     {
-        JsonResponse::notFound('Route not found');
+        JsonResponse::error('Route not found', 404);
     }
 }

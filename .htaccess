@@ -1,6 +1,9 @@
 # Configuration Apache pour Quelio API
 # Ce fichier protège l'accès aux fichiers sensibles et n'autorise que l'accès à index.php
 
+# Désactiver MultiViews et le listing des répertoires
+Options -MultiViews -Indexes
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
@@ -8,53 +11,31 @@
     RewriteRule ^\.(.*)$ - [F,L]
 
     # Bloquer l'accès aux fichiers de configuration
-    RewriteRule ^config\.php$ - [F,L]
-    RewriteRule ^config\.example\.php$ - [F,L]
+    RewriteRule ^(config|config\.example)\.php$ - [F,L]
+    RewriteRule ^(README\.md|composer\.(json|lock))$ - [F,L]
 
-    # Bloquer l'accès au fichier de données
-    RewriteRule ^data\.json$ - [F,L]
+    # Rediriger manifest.json, icon.svg et data.json vers index.php (le router gérera la route)
+    RewriteRule ^(manifest\.json|icon\.svg|data\.json)$ index.php [QSA,L]
 
-    # Bloquer l'accès aux fichiers README et documentation
-    RewriteRule ^README\.md$ - [F,L]
-
-    # Rediriger manifest.json vers index.php (le router gérera la route)
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteRule ^manifest\.json$ index.php [QSA,L]
-
-    # Rediriger icon.svg vers index.php (le router gérera la route)
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteRule ^icon\.svg$ index.php [QSA,L]
-
-    # Permettre uniquement l'accès à index.php
-    # Tout autre fichier PHP retournera une 404
+    # Bloquer tous les fichiers PHP sauf index.php
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_URI} !^/index\.php$
     RewriteCond %{REQUEST_FILENAME} \.php$
     RewriteRule .* - [R=404,L]
 </IfModule>
 
-# Désactiver l'affichage du listing des répertoires
-Options -Indexes
-
 # Protéger les fichiers sensibles (couche supplémentaire de sécurité)
-<FilesMatch "^(config\.php|config\.example\.php|data\.json|\.git.*|\.htaccess|composer\.(json|lock))$">
-    Order allow,deny
-    Deny from all
+# Note: data.json est accessible via le router avec authentification admin
+<FilesMatch "^(config\.php|config\.example\.php|\.git.*|\.htaccess|composer\.(json|lock))$">
+    Require all denied
 </FilesMatch>
 
-# Permettre uniquement l'accès à index.php
-<FilesMatch "^index\.php$">
-    Order allow,deny
-    Allow from all
-</FilesMatch>
-
-# Bloquer tous les autres fichiers PHP
+# Autoriser uniquement index.php
 <FilesMatch "\.php$">
     <If "%{REQUEST_URI} !~ m#^/index\.php$#">
-        Order allow,deny
-        Deny from all
+        Require all denied
     </If>
 </FilesMatch>
 
-# Retourner 404 pour les fichiers inexistants au lieu de 403
+# Retourner 404 pour les accès interdits
 ErrorDocument 403 /index.php

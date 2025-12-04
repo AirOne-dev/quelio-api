@@ -74,4 +74,11 @@ return [
      */
     'rate_limit_max_attempts' => 5,
     'rate_limit_window' => 300, // 5 minutes
+
+    /**
+     * Identifiants administrateur pour accéder aux données sensibles
+     * IMPORTANT : Changez ces valeurs pour votre installation !
+     */
+    'admin_username' => 'admin',
+    'admin_password' => 'CHANGE-THIS-TO-A-SECURE-PASSWORD',
 ];

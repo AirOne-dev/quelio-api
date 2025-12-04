@@ -15,13 +15,12 @@ class ServiceProvider
     /**
      * Register all services automatically
      */
-    public function register(): void
+    public function register(): self
     {
-        // Register config as array
         $this->container->singleton('array', fn() => $this->config);
-
-        // Register core services
         $this->registerCoreServices();
+
+        return $this;
     }
 
     /**
@@ -29,43 +28,32 @@ class ServiceProvider
      */
     private function registerCoreServices(): void
     {
-        $config = $this->config;
-
         // AuthContext (shared instance for request lifecycle)
-        $this->container->singleton(AuthContext::class, fn() => new AuthContext());
-
-        // Storage (depends on debug_mode config)
-        $this->container->singleton(Storage::class, fn() => new Storage($config['debug_mode']));
-
-        // KelioClient (depends on config)
-        $this->container->singleton(KelioClient::class, fn() =>
-            new KelioClient($config['kelio_url'])
-        );
-
-        // Auth (depends on Storage and encryption key from config)
-        $this->container->singleton(Auth::class, fn($c) =>
-            new Auth($c->get(Storage::class), $config['encryption_key'])
-        );
-
-        // AuthMiddleware (depends on Auth, KelioClient, AuthContext, and RateLimiter)
-        $this->container->singleton(AuthMiddleware::class, fn($c) =>
-            new AuthMiddleware(
-                $c->get(Auth::class),
-                $c->get(KelioClient::class),
-                $c->get(AuthContext::class),
-                $c->get(RateLimiter::class)
+        // Will have Auth and Storage injected after they are registered
+        $this->container
+            ->singleton(AuthContext::class, fn() => new AuthContext())
+            ->singleton(Storage::class, fn() => new Storage($this->config['debug_mode']))
+            ->singleton(KelioClient::class, fn() => new KelioClient($this->config['kelio_url']))
+            ->singleton(Auth::class, fn($c) => new Auth($c->get(Storage::class), $this->config['encryption_key']))
+            ->singleton(AuthMiddleware::class, fn($c) =>
+                new AuthMiddleware(
+                    $c->get(Auth::class),
+                    $c->get(KelioClient::class),
+                    $c->get(AuthContext::class),
+                    $c->get(RateLimiter::class),
+                    $this->config
+                )
             )
-        );
+            ->singleton(TimeCalculator::class, fn() => new TimeCalculator($this->config))
+            ->singleton(RateLimiter::class, fn() => new RateLimiter($this->config['rate_limit_max_attempts'], $this->config['rate_limit_window']));
 
-        // TimeCalculator (depends on config)
-        $this->container->singleton(TimeCalculator::class, fn() =>
-            new TimeCalculator($config)
-        );
-
-        // RateLimiter (depends on config)
-        $this->container->singleton(RateLimiter::class, fn() =>
-            new RateLimiter($config['rate_limit_max_attempts'], $config['rate_limit_window'])
-        );
+        // Inject Auth and Storage into AuthContext
+        $this->container
+            ->get(AuthContext::class)
+            ->setServices(
+                $this->container->get(Auth::class),
+                $this->container->get(Storage::class)
+            );
     }
 
     /**
