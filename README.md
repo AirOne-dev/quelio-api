@@ -15,6 +15,144 @@ L'API gère automatiquement les pauses et calcule deux totaux :
 - **Heures effectives** : temps réellement travaillé sans les pauses
 - **Heures payées** : temps travaillé avec les pauses incluses
 
+## Architecture
+
+L'API est organisée selon une architecture modulaire et orientée objet pour faciliter la maintenance et l'évolution du code.
+
+### Structure des fichiers
+
+```
+api/
+├── index.php                  # Point d'entrée principal (routing)
+├── config.php                 # Configuration de l'application
+├── .htaccess                  # Règles de sécurité Apache
+├── nginx.conf                 # Configuration Nginx
+├── nginx-security.conf        # Règles de sécurité Nginx
+└── src/                       # Code source de l'application
+    ├── Router.php             # Gestionnaire de routes
+    ├── Auth.php               # Authentification et tokens
+    ├── Storage.php            # Gestion du stockage des données
+    ├── KelioClient.php        # Client pour l'API Kelio
+    ├── TimeCalculator.php     # Calculs des heures de travail
+    └── routes/                # Définitions des routes
+        ├── home.php           # GET / - Formulaire de connexion
+        ├── login.php          # POST / - Authentification
+        ├── preferences.php    # POST / - Gestion des préférences
+        ├── icon.php           # GET /icon.svg - Icône PWA dynamique
+        └── manifest.php       # GET /manifest.json - Manifest PWA
+```
+
+### Classes principales
+
+#### **Router** (`src/Router.php`)
+Gestionnaire de routes avec support des middlewares. Permet de définir facilement des routes GET/POST et d'appliquer des middlewares d'authentification.
+
+#### **Auth** (`src/Auth.php`)
+Gestion de l'authentification et des tokens de session. Fournit des méthodes pour générer et valider les tokens, ainsi qu'un middleware `requireAuth()`.
+
+#### **Storage** (`src/Storage.php`)
+Gestion du stockage des données utilisateur dans un fichier JSON. Gère automatiquement les emplacements de fichiers et les permissions.
+
+#### **KelioClient** (`src/KelioClient.php`)
+Client pour interagir avec l'API Kelio. Gère la connexion, la récupération du token CSRF et l'extraction des données de pointage.
+
+#### **TimeCalculator** (`src/TimeCalculator.php`)
+Calcule les heures de travail en tenant compte des pauses et des seuils horaires configurés.
+
+### Routes disponibles
+
+| Méthode | Route | Description | Authentification |
+|---------|-------|-------------|------------------|
+| GET | `/` | Affiche le formulaire de connexion | Non |
+| POST | `/` | Authentification et récupération des heures | Non (credentials Kelio) |
+| POST | `/` (action=update_preferences) | Mise à jour des préférences | Oui (token requis) |
+| GET | `/icon.svg` | Génère l'icône PWA dynamique | Non |
+| GET | `/manifest.json` | Génère le manifest PWA | Non |
+
+### Sécurité
+
+L'architecture implémente plusieurs niveaux de sécurité :
+
+1. **Routing centralisé** : Toutes les requêtes passent par `index.php`
+2. **Blocage des fichiers sensibles** : Les fichiers `.htaccess` et `nginx.conf` bloquent l'accès direct à tous les fichiers PHP sauf `index.php`
+3. **URLs propres** : Les routes `/icon.svg` et `/manifest.json` sont redirigées en interne vers le router
+4. **Authentification par token** : Les endpoints sensibles nécessitent un token de session valide
+5. **Validation des données** : Tous les paramètres sont validés et sanitizés
+
+### Ajouter de nouvelles routes
+
+L'architecture modulaire permet d'ajouter facilement de nouvelles routes en 2 étapes :
+
+#### 1. Créer le fichier de route
+
+Créez un fichier dans `src/routes/` qui retourne une fonction anonyme :
+
+```php
+<?php
+// src/routes/my-route.php
+
+/**
+ * Ma nouvelle route
+ * GET /my-route
+ */
+return function () {
+    global $storage, $auth; // Accès aux dépendances si nécessaire
+
+    header('Content-Type: application/json');
+
+    // Votre logique ici
+    echo json_encode([
+        'message' => 'Hello from my route!'
+    ], JSON_PRETTY_PRINT);
+};
+```
+
+#### 2. Enregistrer la route dans `index.php`
+
+Ajoutez la route après les autres définitions :
+
+```php
+// Route simple
+$router->get('/my-route', require __DIR__ . '/src/routes/my-route.php');
+
+// Route avec authentification (token requis)
+$router->post('/protected-route',
+    require __DIR__ . '/src/routes/protected.php',
+    [$auth, 'requireAuth']  // Middleware d'authentification
+);
+```
+
+#### Exemple complet : Route protégée
+
+```php
+// src/routes/get-user-data.php
+<?php
+return function () {
+    global $storage;
+
+    $username = $_POST['username'] ?? '';
+    $userData = $storage->getUserData($username);
+
+    header('Content-Type: application/json');
+    echo json_encode($userData ?? ['error' => 'User not found'], JSON_PRETTY_PRINT);
+};
+
+// Dans index.php
+$router->post('/user-data',
+    require __DIR__ . '/src/routes/get-user-data.php',
+    [$auth, 'requireAuth']
+);
+```
+
+#### Accès aux dépendances
+
+Les routes ont accès aux objets globaux suivants :
+- `$config` : Configuration de l'application
+- `$storage` : Gestionnaire de stockage
+- `$auth` : Gestionnaire d'authentification
+- `$kelioClient` : Client Kelio
+- `$timeCalculator` : Calculateur d'heures
+
 ## Configuration
 
 1. **Copiez le fichier de configuration d'exemple** :
@@ -181,9 +319,17 @@ curl -I http://votre-serveur.com/config.php
 curl -I http://votre-serveur.com/data.json
 curl -I http://votre-serveur.com/.git/config
 curl -I http://votre-serveur.com/README.md
+curl -I http://votre-serveur.com/src/Router.php
+curl -I http://votre-serveur.com/src/routes/login.php
 
-# Seul index.php doit être accessible
+# Ces requêtes doivent fonctionner (200 OK)
 curl -I http://votre-serveur.com/index.php  # 200 OK ou 403 si formulaire désactivé
+curl -I http://votre-serveur.com/icon.svg   # 200 OK (génération d'icône SVG)
+curl -I http://votre-serveur.com/manifest.json  # 200 OK (génération de manifest)
+
+# Ces requêtes doivent retourner 404 (accès direct bloqué)
+curl -I http://votre-serveur.com/icon.php
+curl -I http://votre-serveur.com/manifest.php
 ```
 
 ### Permissions des fichiers
@@ -227,9 +373,14 @@ Si l'accès est désactivé, vous recevrez une erreur 403 :
 
 #### Authentification et récupération des heures
 
-Envoyez une requête POST avec vos identifiants Kelio :
+L'API supporte deux méthodes d'authentification :
 
-#### Avec cURL
+1. **Avec identifiants** (username + password) : Récupère les données fraîches depuis Kelio
+2. **Avec token** (username + token) : Utilise les données en cache (plus rapide)
+
+#### Méthode 1 : Authentification avec identifiants (première connexion)
+
+##### Avec cURL
 
 ```bash
 curl --location 'http://votre-serveur.com/index.php' \
@@ -237,21 +388,52 @@ curl --location 'http://votre-serveur.com/index.php' \
 --form 'password="VOTRE_MOT_DE_PASSE_KELIO"'
 ```
 
-#### Avec HTTPie
+**Réponse** : Vous recevrez un `token` dans la réponse que vous pourrez réutiliser.
+
+#### Méthode 2 : Authentification avec token (requêtes suivantes)
+
+##### Avec cURL
 
 ```bash
+# Utilisez le token obtenu lors de la première connexion
+curl --location 'http://votre-serveur.com/index.php' \
+--form 'username="VOTRE_IDENTIFIANT_KELIO"' \
+--form 'token="VOTRE_TOKEN_DE_SESSION"'
+```
+
+**Avantages** :
+- ✅ Plus rapide (pas de connexion à Kelio)
+- ✅ Pas besoin d'envoyer le mot de passe à chaque requête
+- ✅ Utilise les données en cache
+- ✅ Réduit la charge sur le serveur Kelio
+
+##### Avec HTTPie
+
+```bash
+# Avec identifiants
 http -f POST http://votre-serveur.com/index.php \
 username="VOTRE_IDENTIFIANT_KELIO" \
 password="VOTRE_MOT_DE_PASSE_KELIO"
+
+# Avec token
+http -f POST http://votre-serveur.com/index.php \
+username="VOTRE_IDENTIFIANT_KELIO" \
+token="VOTRE_TOKEN_DE_SESSION"
 ```
 
-#### Avec Postman
+##### Avec Postman
 
 - Méthode : `POST`
 - URL : `http://votre-serveur.com/index.php`
 - Body : `form-data`
+
+  **Option 1 : Avec identifiants**
   - `username` : votre identifiant Kelio
   - `password` : votre mot de passe Kelio
+
+  **Option 2 : Avec token**
+  - `username` : votre identifiant Kelio
+  - `token` : votre token de session
 
 #### Mise à jour des préférences utilisateur
 
@@ -275,12 +457,73 @@ curl --location 'http://votre-serveur.com/index.php' \
 
 **Sécurité** : Le token est obligatoire et est validé côté serveur. Sans token valide, la requête sera refusée avec une erreur 401.
 
+### Routes PWA (Progressive Web App)
+
+L'API fournit deux endpoints pour la génération dynamique d'icônes et de manifest PWA avec personnalisation des couleurs.
+
+#### Génération d'icône SVG
+
+```bash
+# Icône avec couleurs par défaut (midnight theme)
+curl http://votre-serveur.com/icon.svg
+
+# Icône avec couleurs personnalisées
+curl "http://votre-serveur.com/icon.svg?primary=4F46E5&secondary=6366F1"
+```
+
+**Paramètres** :
+- `primary` (optionnel) : Couleur primaire en hexadécimal (sans #). Défaut : `4F46E5`
+- `secondary` (optionnel) : Couleur secondaire en hexadécimal (sans #). Défaut : `6366F1`
+
+**Réponse** : Image SVG avec gradient utilisant les couleurs spécifiées
+
+#### Génération de manifest PWA
+
+```bash
+# Manifest avec couleurs par défaut
+curl http://votre-serveur.com/manifest.json
+
+# Manifest avec couleurs personnalisées
+curl "http://votre-serveur.com/manifest.json?primary=4F46E5&secondary=6366F1&background=1a1d29"
+```
+
+**Paramètres** :
+- `primary` (optionnel) : Couleur primaire pour l'icône. Défaut : `4F46E5`
+- `secondary` (optionnel) : Couleur secondaire pour l'icône. Défaut : `6366F1`
+- `background` (optionnel) : Couleur de fond de l'application. Défaut : `1a1d29`
+
+**Réponse** : Manifest JSON avec les icônes et couleurs configurées
+
+```json
+{
+    "name": "Quel io",
+    "short_name": "Quel io",
+    "description": "Suivez vos horaires de travail",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#1a1d29",
+    "theme_color": "#1a1d29",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "/api/icon.svg?primary=4F46E5&secondary=6366F1",
+            "sizes": "512x512",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ]
+}
+```
+
 ## Réponse de l'API
 
 ### Réponse en cas de succès (login)
 
+#### Authentification avec identifiants (données fraîches)
+
 ```json
 {
+    "authenticated_with": "credentials",
     "hours": {
         "21-10-2024": ["08:30", "12:00", "13:00", "18:30"],
         "22-10-2024": ["08:45", "12:15", "13:15", "17:45"],
@@ -294,19 +537,45 @@ curl --location 'http://votre-serveur.com/index.php' \
     },
     "token": "a1b2c3d4e5f6...abc123:1234567890",
     "data_saved": true,
-    "data_file_path": "/tmp/kelio_data.json"
+    "data_file_path": "/tmp/kelio_data.json",
+    "cache": false
+}
+```
+
+#### Authentification avec token (données en cache)
+
+```json
+{
+    "authenticated_with": "token",
+    "hours": {
+        "21-10-2024": ["08:30", "12:00", "13:00", "18:30"],
+        "22-10-2024": ["08:45", "12:15", "13:15", "17:45"],
+        "23-10-2024": ["09:00"]
+    },
+    "total_effective": "15:45",
+    "total_paid": "16:13",
+    "last_save": "23/10/2024 18:30:15",
+    "preferences": {
+        "theme": "ocean",
+        "minutes_objective": 2280
+    },
+    "token": "a1b2c3d4e5f6...abc123:1234567890",
+    "cache": true
 }
 ```
 
 #### Champs de la réponse
 
+- **authenticated_with** : Méthode d'authentification utilisée (`"credentials"` ou `"token"`)
 - **hours** : Objet contenant les heures badgées par jour (format `JJ-MM-AAAA`)
 - **total_effective** : Total des heures travaillées sans les pauses (format `HH:MM`)
 - **total_paid** : Total des heures payées avec les pauses incluses (format `HH:MM`)
 - **preferences** : Préférences utilisateur (thème, objectif hebdomadaire)
-- **token** : Token de session pour les requêtes de mise à jour des préférences (valide jusqu'au changement de mot de passe Kelio)
-- **data_saved** : Indique si les données ont été sauvegardées en cache (`true`/`false`)
-- **data_file_path** : Chemin du fichier de cache
+- **token** : Token de session pour les requêtes futures (valide jusqu'au changement de mot de passe Kelio)
+- **cache** : Indique si les données proviennent du cache (`true`) ou sont fraîches (`false`)
+- **last_save** : Date de la dernière sauvegarde (uniquement avec authentification par token)
+- **data_saved** : Indique si les données ont été sauvegardées (uniquement avec authentification par credentials)
+- **data_file_path** : Chemin du fichier de cache (uniquement avec authentification par credentials)
 
 ### Réponse en cas de succès (update_preferences)
 
@@ -348,9 +617,29 @@ Si la connexion à Kelio échoue mais que des données en cache existent :
 
 ```json
 {
-    "error": "username and password required"
+    "error": "username is required"
 }
 ```
+
+```json
+{
+    "error": "password or token required"
+}
+```
+
+```json
+{
+    "error": "Invalid or expired token"
+}
+```
+Statut HTTP : `401 Unauthorized`
+
+```json
+{
+    "error": "No cached data found for this user"
+}
+```
+Statut HTTP : `404 Not Found` (lors de l'authentification par token sans données en cache)
 
 ```json
 {

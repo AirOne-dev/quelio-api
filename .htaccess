@@ -17,17 +17,13 @@
     # Bloquer l'accès aux fichiers README et documentation
     RewriteRule ^README\.md$ - [F,L]
 
-    # Rediriger manifest.json vers manifest.php avec les paramètres
+    # Rediriger manifest.json vers index.php (le router gérera la route)
     RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteRule ^manifest\.json$ manifest.php [QSA,L]
+    RewriteRule ^manifest\.json$ index.php [QSA,L]
 
-    # Rediriger icon.svg vers icon.php avec les paramètres
+    # Rediriger icon.svg vers index.php (le router gérera la route)
     RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteRule ^icon\.svg$ icon.php [QSA,L]
-
-    # Permettre l'accès à manifest.php et icon.php
-    RewriteCond %{REQUEST_URI} ^/(manifest|icon)\.php$
-    RewriteRule .* - [L]
+    RewriteRule ^icon\.svg$ index.php [QSA,L]
 
     # Permettre uniquement l'accès à index.php
     # Tout autre fichier PHP retournera une 404
@@ -46,10 +42,18 @@ Options -Indexes
     Deny from all
 </FilesMatch>
 
-# Permettre l'accès à index.php, manifest.php et icon.php
-<FilesMatch "^(index|manifest|icon)\.php$">
+# Permettre uniquement l'accès à index.php
+<FilesMatch "^index\.php$">
     Order allow,deny
     Allow from all
+</FilesMatch>
+
+# Bloquer tous les autres fichiers PHP
+<FilesMatch "\.php$">
+    <If "%{REQUEST_URI} !~ m#^/index\.php$#">
+        Order allow,deny
+        Deny from all
+    </If>
 </FilesMatch>
 
 # Retourner 404 pour les fichiers inexistants au lieu de 403
