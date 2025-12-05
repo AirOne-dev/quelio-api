@@ -1,56 +1,33 @@
-# Configuration Apache pour Quelio API
-# Ce fichier protège l'accès aux fichiers sensibles et n'autorise que l'accès à index.php
+# Quelio API - Configuration Apache
+# Front Controller Pattern : toutes les requêtes → index.php
 
+# Désactiver MultiViews (important pour éviter les comportements inattendus)
+Options -MultiViews -Indexes
+
+# Protection des fichiers sensibles
+# Note: data.json n'est pas bloqué ici car l'endpoint /data.json doit être accessible via le router
+# Le fichier physique data.json est protégé par les règles de rewrite (les .json ne sont pas servis directement)
+# et l'endpoint /data.json est protégé par AuthMiddleware::admin() au niveau applicatif
+<FilesMatch "^(config|config\.example)\.php$|^composer\.(json|lock)$|^README\.md$|^\.(git|htaccess)">
+    Require all denied
+</FilesMatch>
+
+# Redirection front controller
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # Bloquer l'accès aux fichiers cachés (.git, .gitignore, .htaccess, etc.)
-    RewriteRule ^\.(.*)$ - [F,L]
+    # Si le fichier existe (sauf .svg et .json), le servir directement
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteCond %{REQUEST_URI} !\.(svg|json)$
+    RewriteRule ^ - [L]
 
-    # Bloquer l'accès aux fichiers de configuration
-    RewriteRule ^config\.php$ - [F,L]
-    RewriteRule ^config\.example\.php$ - [F,L]
-
-    # Bloquer l'accès au fichier de données
-    RewriteRule ^data\.json$ - [F,L]
-
-    # Bloquer l'accès aux fichiers README et documentation
-    RewriteRule ^README\.md$ - [F,L]
-
-    # Rediriger manifest.json vers manifest.php avec les paramètres
+    # Toutes les autres requêtes → index.php
+    # Cela s'applique AVANT que Apache ne fasse sa redirection DirectorySlash
     RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteRule ^manifest\.json$ manifest.php [QSA,L]
-
-    # Rediriger icon.svg vers icon.php avec les paramètres
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteRule ^icon\.svg$ icon.php [QSA,L]
-
-    # Permettre l'accès à manifest.php et icon.php
-    RewriteCond %{REQUEST_URI} ^/(manifest|icon)\.php$
-    RewriteRule .* - [L]
-
-    # Permettre uniquement l'accès à index.php
-    # Tout autre fichier PHP retournera une 404
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{REQUEST_URI} !^/index\.php$
-    RewriteCond %{REQUEST_FILENAME} \.php$
-    RewriteRule .* - [R=404,L]
+    RewriteRule ^ index.php [QSA,L]
 </IfModule>
 
-# Désactiver l'affichage du listing des répertoires
-Options -Indexes
-
-# Protéger les fichiers sensibles (couche supplémentaire de sécurité)
-<FilesMatch "^(config\.php|config\.example\.php|data\.json|\.git.*|\.htaccess|composer\.(json|lock))$">
-    Order allow,deny
-    Deny from all
-</FilesMatch>
-
-# Permettre l'accès à index.php, manifest.php et icon.php
-<FilesMatch "^(index|manifest|icon)\.php$">
-    Order allow,deny
-    Allow from all
-</FilesMatch>
-
-# Retourner 404 pour les fichiers inexistants au lieu de 403
-ErrorDocument 403 /index.php
+# Si mod_rewrite n'est pas disponible, utiliser FallbackResource
+<IfModule !mod_rewrite.c>
+    FallbackResource index.php
+</IfModule>
