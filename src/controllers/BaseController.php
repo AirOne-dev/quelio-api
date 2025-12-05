@@ -140,6 +140,9 @@ class BaseController extends ActionController
         $savedData = $this->storage->getUserData($username);
 
         if ($savedData !== null) {
+            // Get user preferences
+            $preferences = $this->storage->getUserPreferences($username);
+
             JsonResponse::success([
                 'error' => 'Failed to fetch fresh data, using cached data',
                 'fallback' => true,

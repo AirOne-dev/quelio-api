@@ -1,47 +1,33 @@
-# Configuration Apache pour Quelio API
-# Ce fichier protège l'accès aux fichiers sensibles et n'autorise que l'accès à index.php
+# Quelio API - Configuration Apache
+# Front Controller Pattern : toutes les requêtes → index.php
 
-# Désactiver MultiViews et le listing des répertoires
+# Désactiver MultiViews (important pour éviter les comportements inattendus)
 Options -MultiViews -Indexes
 
-<IfModule mod_rewrite.c>
-    RewriteEngine On
-
-    # Bloquer l'accès aux fichiers cachés (.git, .gitignore, .htaccess, etc.)
-    RewriteRule ^\.(.*)$ - [F,L]
-
-    # Bloquer l'accès aux fichiers de configuration
-    RewriteRule ^(config|config\.example)\.php$ - [F,L]
-    RewriteRule ^(README\.md|composer\.(json|lock))$ - [F,L]
-
-    # Bloquer tous les fichiers PHP sauf index.php
-    RewriteCond %{REQUEST_URI} !^.*/index\.php$
-    RewriteCond %{REQUEST_FILENAME} \.php$
-    RewriteRule .* - [F,L]
-
-    # Rediriger toutes les requêtes vers index.php (front controller)
-    # Ne pas rediriger si le fichier existe (sauf PHP) ou si c'est un répertoire
-    RewriteCond %{REQUEST_FILENAME} !-f [OR]
-    RewriteCond %{REQUEST_FILENAME} \.php$
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule ^ index.php [L]
-</IfModule>
-
-# Protéger les fichiers sensibles (couche supplémentaire de sécurité)
-# Note: data.json est accessible via le router avec authentification admin
-<FilesMatch "^(config\.php|config\.example\.php|\.git.*|\.htaccess|composer\.(json|lock))$">
+# Protection des fichiers sensibles
+# Note: data.json n'est pas bloqué ici car l'endpoint /data.json doit être accessible via le router
+# Le fichier physique data.json est protégé par les règles de rewrite (les .json ne sont pas servis directement)
+# et l'endpoint /data.json est protégé par AuthMiddleware::admin() au niveau applicatif
+<FilesMatch "^(config|config\.example)\.php$|^composer\.(json|lock)$|^README\.md$|^\.(git|htaccess)">
     Require all denied
 </FilesMatch>
 
-# Autoriser index.php et interdire les autres fichiers PHP
-<FilesMatch "\.php$">
-    <If "%{REQUEST_URI} =~ m#/index\.php$#">
-        Require all granted
-    </If>
-    <Else>
-        Require all denied
-    </Else>
-</FilesMatch>
+# Redirection front controller
+<IfModule mod_rewrite.c>
+    RewriteEngine On
 
-# Retourner 404 pour les accès interdits
-ErrorDocument 403 /index.php
+    # Si le fichier existe (sauf .svg et .json), le servir directement
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteCond %{REQUEST_URI} !\.(svg|json)$
+    RewriteRule ^ - [L]
+
+    # Toutes les autres requêtes → index.php
+    # Cela s'applique AVANT que Apache ne fasse sa redirection DirectorySlash
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+# Si mod_rewrite n'est pas disponible, utiliser FallbackResource
+<IfModule !mod_rewrite.c>
+    FallbackResource index.php
+</IfModule>

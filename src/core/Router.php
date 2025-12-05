@@ -10,7 +10,7 @@ class Router
      * Add a route to the router
      * @param string $method HTTP method (GET, POST, etc.)
      * @param string $path Route path
-     * @param callable $handler Route handler
+     * @param string $controllerClass Controller class name
      * @param array $middlewares Optional middlewares for this route
      */
     public function addRoute(string $method, string $path, string $controllerClass, array $middlewares = []): self
@@ -94,19 +94,10 @@ class Router
         // Normalize script directory (decode URL encoding)
         $scriptDir = urldecode($scriptDir);
 
-        // DEBUG: Log for troubleshooting subdirectory issues
+        // Remove the script directory from the path for subdirectory support
         if ($scriptDir !== '/') {
-            error_log("Router DEBUG - Original path: {$_SERVER['REQUEST_URI']}");
-            error_log("Router DEBUG - Decoded path: $path");
-            error_log("Router DEBUG - Script name: {$_SERVER['SCRIPT_NAME']}");
-            error_log("Router DEBUG - Script dir: $scriptDir");
-
-            // Remove the script directory from the path
             if (str_starts_with($path, $scriptDir)) {
                 $path = substr($path, strlen($scriptDir));
-                error_log("Router DEBUG - Path after removing script dir: $path");
-            } else {
-                error_log("Router DEBUG - Path does NOT start with script dir!");
             }
         }
 
@@ -119,8 +110,6 @@ class Router
         if ($path !== '/' && str_ends_with($path, '/')) {
             $path = rtrim($path, '/');
         }
-
-        error_log("Router DEBUG - Final normalized path: $path");
 
         foreach ($this->routes as $route) {
             if ($route['method'] === $method && $this->matchPath($route['path'], $path)) {
@@ -204,21 +193,6 @@ class Router
      */
     private function notFound(): void
     {
-        $debug = null;
-
-        // Include debug info to help troubleshoot routing issues
-        $path = urldecode(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
-        $scriptDir = urldecode(dirname($_SERVER['SCRIPT_NAME']));
-
-        $debug = [
-            'method' => $_SERVER['REQUEST_METHOD'],
-            'original_uri' => $_SERVER['REQUEST_URI'],
-            'decoded_path' => $path,
-            'script_name' => $_SERVER['SCRIPT_NAME'],
-            'script_dir' => $scriptDir,
-            'registered_routes' => array_map(fn($r) => $r['method'] . ' ' . $r['path'], $this->routes)
-        ];
-
-        JsonResponse::error('Route not found', 404, ['debug' => $debug]);
+        JsonResponse::error('Route not found', 404);
     }
 }
