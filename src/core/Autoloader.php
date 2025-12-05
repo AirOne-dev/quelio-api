@@ -49,43 +49,4 @@ class Autoloader
             }
         }
     }
-
-    /**
-     * Discover and return all controller classes
-     */
-    public function discoverControllers(): array
-    {
-        $controllers = [];
-        $controllersDir = $this->baseDir . 'controllers/';
-
-        if (!is_dir($controllersDir)) {
-            return $controllers;
-        }
-
-        foreach (glob($controllersDir . '*.php') as $file) {
-            $className = basename($file, '.php');
-            $controllers[] = $className;
-        }
-
-        return $controllers;
-    }
-
-    /**
-     * Discover all service classes (non-controllers, non-middleware)
-     */
-    public function discoverServices(): array
-    {
-        $services = [];
-        $exclude = ['Autoloader.php', 'Container.php', 'Router.php', 'JsonResponse.php', 'ActionController.php'];
-
-        foreach (glob($this->baseDir . '*.php') as $file) {
-            $fileName = basename($file);
-            if (!in_array($fileName, $exclude)) {
-                $className = basename($file, '.php');
-                $services[] = $className;
-            }
-        }
-
-        return $services;
-    }
 }
