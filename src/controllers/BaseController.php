@@ -106,58 +106,28 @@ class BaseController extends ActionController
             $totalPaid = $this->timeCalculator->calculateTotalWorkingHours($hours, $this->config['pause_time']);
 
             // Save the successful result with token
-            $saveSuccess = $this->storage->saveUserData($username, $hours, $totalEffective, $totalPaid, $token);
+            $this->storage->saveUserData($username, $hours, $totalEffective, $totalPaid, $token);
 
             // Get user preferences
             $preferences = $this->storage->getUserPreferences($username);
 
             JsonResponse::success([
-                'authenticated_with' => $this->authContext->getAuthenticatedWith(),
                 'username' => $username,
                 'hours' => $hours,
                 'total_effective' => $totalEffective,
                 'total_paid' => $totalPaid,
                 'preferences' => $preferences,
-                'token' => $token,
-                'data_saved' => $saveSuccess,
-                'data_file_path' => $this->storage->getDataFilePath(),
-                'cache' => false
+                'token' => $token
             ]);
         } catch (\Throwable $th) {
-            // Try to get fallback data
-            $this->handleFallbackData();
-        }
-    }
+            // Invalidate token on kelio fetch error
+            $this->storage->invalidateToken($username);
 
-    /**
-     * Handle fallback data when Kelio connection fails
-     */
-    private function handleFallbackData(): void
-    {
-        $username = $this->authContext->getUsername();
-        $password = $this->authContext->getPassword();
-        $token = $this->authContext->getOrGenerateToken();
-        $savedData = $this->storage->getUserData($username);
-
-        if ($savedData !== null) {
-            // Get user preferences
-            $preferences = $this->storage->getUserPreferences($username);
-
-            JsonResponse::success([
-                'error' => 'Failed to fetch fresh data, using cached data',
-                'fallback' => true,
-                'authenticated_with' => $this->authContext->getAuthenticatedWith(),
-                'username' => $username,
-                'hours' => $savedData['hours'],
-                'total_effective' => $savedData['total_effective'],
-                'total_paid' => $savedData['total_paid'],
-                'last_save' => $savedData['last_save'],
-                'preferences' => $preferences,
-                'token' => $token,
-                'cache' => true
+            // Return error - no fallback to cached data
+            JsonResponse::error('Failed to fetch data from Kelio. Please login again.', 401, [
+                'token_invalidated' => true
             ]);
-        } else {
-            JsonResponse::error('No fresh data available and no cached data found');
         }
     }
+
 }
