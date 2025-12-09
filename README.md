@@ -122,10 +122,10 @@ curl http://votre-serveur.com/data.json?username=admin&password=ADMIN_PASSWORD
 
 ```bash
 # Icône SVG personnalisable
-curl "http://votre-serveur.com/icon.svg?primary=4F46E5&secondary=6366F1"
+curl "http://votre-serveur.com/icon.svg?primary=4F46E5&secondary=059669"
 
 # Manifest PWA
-curl "http://votre-serveur.com/manifest.json?primary=4F46E5&secondary=6366F1&background=1a1d29"
+curl "http://votre-serveur.com/manifest.json?primary=4F46E5&secondary=059669&background=1a1d29"
 ```
 
 ## Réponses API

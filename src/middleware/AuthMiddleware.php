@@ -7,6 +7,7 @@ class AuthMiddleware
         private KelioClient $kelioClient,
         private AuthContext $authContext,
         private RateLimiter $rateLimiter,
+        private Storage $storage,
         private array $config
     ) {
     }
@@ -101,6 +102,11 @@ class AuthMiddleware
             // Invalid credentials - record failed attempt
             $this->rateLimiter->recordAttempt($ip);
 
+            // Invalidate token if it exists
+            if (!empty($username)) {
+                $this->storage->invalidateToken($username);
+            }
+
             $remaining = $this->rateLimiter->getRemainingAttempts($ip);
             $errorMessage = 'Invalid username or password: ' . $e->getMessage();
 
@@ -108,7 +114,7 @@ class AuthMiddleware
                 $errorMessage .= " ($remaining attempts remaining)";
             }
 
-            JsonResponse::unauthorized($errorMessage);
+            JsonResponse::unauthorized($errorMessage, ['token_invalidated' => true]);
             return true; // Stop execution
         }
     }

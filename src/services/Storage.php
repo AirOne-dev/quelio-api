@@ -181,6 +181,35 @@ class Storage
     }
 
     /**
+     * Invalidate (remove) user token
+     * @param string $username
+     * @return bool
+     */
+    public function invalidateToken(string $username): bool
+    {
+        try {
+            if (!$this->ensureDirectoryExists()) {
+                return false;
+            }
+
+            $allData = $this->loadAllData();
+
+            // If user doesn't exist, nothing to invalidate
+            if (!isset($allData[$username])) {
+                return true;
+            }
+
+            // Remove the token
+            unset($allData[$username][self::KEY_SESSION_TOKEN]);
+
+            return $this->saveAllData($allData);
+        } catch (\Throwable $e) {
+            error_log("Invalidate token error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Ensure the storage directory exists and is writable
      * @return bool
      */

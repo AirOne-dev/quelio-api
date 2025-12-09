@@ -62,10 +62,11 @@ class JsonResponse
     /**
      * Send an unauthorized response
      * @param string $message Error message
+     * @param array $additionalData Additional error data
      */
-    public static function unauthorized(string $message = 'Unauthorized'): void
+    public static function unauthorized(string $message = 'Unauthorized', array $additionalData = []): void
     {
-        self::error($message, 401);
+        self::error($message, 401, $additionalData);
     }
 
     /**
