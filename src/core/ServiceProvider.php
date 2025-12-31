@@ -41,6 +41,7 @@ class ServiceProvider
                     $c->get(KelioClient::class),
                     $c->get(AuthContext::class),
                     $c->get(RateLimiter::class),
+                    $c->get(Storage::class),
                     $this->config
                 )
             )

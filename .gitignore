@@ -6,3 +6,5 @@ config.php
 
 # Logs
 *.log
+
+.DS_Store
