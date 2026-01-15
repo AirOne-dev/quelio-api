@@ -13,70 +13,37 @@ Le projet utilise **PHPUnit 10.5** avec une architecture de tests en 3 niveaux :
 
 ### Prérequis
 - Docker installé et en cours d'exécution
-- Make (optionnel, pour les commandes simplifiées)
 
 ### Installer les dépendances
 
 ```bash
-make install
-# Ou directement :
 docker run --rm -v "$(pwd):/app" -w /app composer:latest install
 ```
 
 ## Exécution des Tests
 
-### Commandes rapides (Makefile)
-
-```bash
-# Afficher toutes les commandes disponibles
-make help
-
-# Exécuter tous les tests
-make test
-
-# Tests unitaires uniquement
-make test-unit
-
-# Tests d'intégration uniquement
-make test-integration
-
-# Test spécifique
-make test-filter FILTER=TimeCalculatorTest
-
-# Générer un rapport de couverture
-make test-coverage
-```
-
-### Commandes détaillées (run-tests.sh)
-
 ```bash
 # Tous les tests
 ./run-tests.sh
 
-# Tests unitaires
+# Tests unitaires uniquement
 ./run-tests.sh --unit
 
-# Tests d'intégration
+# Tests d'intégration uniquement
 ./run-tests.sh --integration
 
-# Test spécifique
+# Test spécifique (par nom de classe ou méthode)
 ./run-tests.sh --filter TimeCalculatorTest
+./run-tests.sh --filter test_generates_valid_token
 
-# Avec couverture de code
+# Avec rapport de couverture HTML
 ./run-tests.sh --coverage
 ```
 
-### Exécution directe avec Docker
-
-```bash
-# PHPUnit via Docker
-docker run --rm -v "$(pwd):/app" -w /app php:8.2-cli \
-  ./vendor/bin/phpunit --testdox
-
-# Avec options
-docker run --rm -v "$(pwd):/app" -w /app php:8.2-cli \
-  ./vendor/bin/phpunit --testdox --filter=AuthTest
-```
+**Note** : Le script `run-tests.sh` gère automatiquement :
+- L'installation de Composer si nécessaire
+- Le lancement de Docker
+- Le passage des arguments à PHPUnit
 
 ## Structure des Tests
 
@@ -293,20 +260,13 @@ var_dump($variable);
 
 ```bash
 # Un seul test
-make test-filter FILTER=test_generates_valid_token
+./run-tests.sh --filter test_generates_valid_token
 
-# Une classe
-make test-filter FILTER=AuthTest
+# Une classe complète
+./run-tests.sh --filter AuthTest
 
 # Un namespace
-./run-tests.sh --filter="Tests\\Unit\\Services"
-```
-
-### Mode verbeux
-
-```bash
-# Avec PHPUnit directement
-./vendor/bin/phpunit --testdox --verbose
+./run-tests.sh --filter "Tests\\Unit\\Services"
 ```
 
 ## CI/CD
@@ -337,7 +297,7 @@ jobs:
 1. Créer le fichier dans le bon dossier (Unit/Integration/Feature)
 2. Étendre `Tests\TestCase`
 3. Implémenter les méthodes de test
-4. Exécuter : `make test`
+4. Exécuter : `./run-tests.sh`
 
 ### Mettre à jour les mocks
 
@@ -346,13 +306,8 @@ Les mocks Kelio sont dans `tests/Mocks/KelioMock.php`. Mettre à jour si l'API K
 ### Nettoyer
 
 ```bash
-make clean
+rm -rf vendor/ .phpunit.cache/ coverage/
 ```
-
-Cela supprime :
-- vendor/
-- .phpunit.cache/
-- coverage/
 
 ## Troubleshooting
 
@@ -384,12 +339,18 @@ docker run --rm \
   composer:latest install
 ```
 
-## Statistiques
-
-Commande pour obtenir les statistiques :
+## Raccourcis Utiles
 
 ```bash
-./vendor/bin/phpunit --testdox | grep -E "(Tests:|Assertions:)"
+# Réinstaller les dépendances
+docker run --rm -v "$(pwd):/app" -w /app composer:latest install
+
+# Exécuter les tests sans le script
+docker run --rm -v "$(pwd):/app" -w /app php:8.2-cli \
+  ./vendor/bin/phpunit --testdox
+
+# Nettoyer complètement
+rm -rf vendor/ .phpunit.cache/ coverage/
 ```
 
 ## Support
@@ -398,3 +359,4 @@ Pour toute question ou problème :
 - Lire cette documentation
 - Consulter `phpunit.xml` pour la configuration
 - Vérifier `tests/bootstrap.php` pour l'initialisation
+- Utiliser `./run-tests.sh` pour toutes les commandes de test

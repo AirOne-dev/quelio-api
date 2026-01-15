@@ -28,6 +28,9 @@ api/
 ## Common Commands
 
 - Start dev server: `php -S localhost:8080` (or use Docker)
+- Run tests: `./run-tests.sh` (uses Docker, no local PHP needed)
+- Run specific test: `./run-tests.sh --filter TimeCalculatorTest`
+- Generate coverage: `./run-tests.sh --coverage`
 - Test login: `curl -X POST http://localhost:8080/ -d "username=user&password=pass"`
 - Access raw data: `GET /data.json` (requires admin credentials)
 
@@ -119,6 +122,23 @@ Critical settings in config.php:
 7. Set config.php permissions to 600
 8. Configure web server URL rewriting (.htaccess or nginx.conf)
 
+## Testing
+
+- **Framework**: PHPUnit 10.5 via Docker
+- **Structure**: Unit tests (services, controllers) + Integration tests
+- **Coverage**: 16+ test files, 60+ test cases
+- **Run tests**: `./run-tests.sh` (all options in TESTING.md)
+- **Mocks**: Kelio API responses mocked for isolated testing
+- **Documentation**: See TESTING.md for complete guide
+
+Quick test commands:
+```bash
+./run-tests.sh              # All tests
+./run-tests.sh --unit       # Unit tests only
+./run-tests.sh --filter AuthTest  # Specific test
+./run-tests.sh --coverage   # Generate HTML coverage report
+```
+
 ## Notes
 
 - Kelio limitation: API returns max 4 items per request (3 requests needed)
@@ -126,3 +146,4 @@ Critical settings in config.php:
 - File locking prevents data corruption during concurrent access
 - Current day handled specially (incomplete day with odd hours)
 - Break logic: conditionally adds morning/afternoon breaks based on thresholds
+- Tests run in Docker - no local PHP installation required
