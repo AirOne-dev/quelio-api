@@ -4,7 +4,30 @@ data.json
 # Fichier de configuration (contient l'URL de votre instance)
 config.php
 
+# Composer dependencies
+/vendor/
+composer.lock
+
+# PHPUnit
+.phpunit.cache/
+coverage/
+
 # Logs
 *.log
+logs/
 
+# Temporary files
+*.tmp
+tmp/
+temp/
+
+# Editor and IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
 .DS_Store
+Thumbs.db
