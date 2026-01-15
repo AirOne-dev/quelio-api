@@ -114,16 +114,26 @@ class TimeCalculator
                 }
             }
 
-            // Apply noon minimum break rule (only when pause bonus is applied)
+            // Apply noon minimum break rule (only when calculating paid hours)
+            // The rule: if lunch break < 1h, remove the "gained" minutes from paid hours
+            // But we can only remove up to the total bonus already added
             if ($pause > 0) {
                 $noonBreakDuration = $this->calculateNoonBreak($hours, $noonBreakStart, $noonBreakEnd);
                 if ($noonBreakDuration !== null && $noonBreakDuration < $noonMinimumBreak) {
-                    // If actual noon break is less than minimum, deduct the minimum instead of actual
-                    $dailyMinutes -= $noonMinimumBreak;
-                } else if ($noonBreakDuration !== null) {
-                    // If actual noon break is >= minimum, deduct the actual break
-                    $dailyMinutes -= $noonBreakDuration;
+                    // User took less than minimum break, so they "gained" time
+                    // Calculate gained minutes
+                    $gainedMinutes = $noonMinimumBreak - $noonBreakDuration;
+
+                    // Calculate total bonus added for this day
+                    $totalBonus = 0;
+                    if ($morningPauseAdded) $totalBonus += $pause;
+                    if ($afternoonPauseAdded) $totalBonus += $pause;
+
+                    // Only deduct up to the bonus amount (can't make paid < effective)
+                    $deduction = min($gainedMinutes, $totalBonus);
+                    $dailyMinutes -= $deduction;
                 }
+                // If break >= minimum, no adjustment needed
             }
 
             $totalMinutes += $dailyMinutes;
