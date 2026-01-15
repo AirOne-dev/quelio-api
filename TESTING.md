@@ -104,6 +104,25 @@ tests/
 - ✓ Indépendance entre IPs
 - ✓ Nettoyage des tentatives expirées
 
+#### KelioClientTest
+- ✓ Extraction du token CSRF depuis la page de login
+- ✓ Extraction du JSESSIONID depuis le header cookie
+- ✓ Parsing des heures depuis le tableau HTML
+- ✓ Gestion d'une page d'heures vide
+- ✓ Détection d'erreur de login depuis la réponse
+- ✓ Validation que le token CSRF est requis pour le login
+- ✓ Validation que l'URL d'action du formulaire est correcte
+- ✓ Validation que tous les champs requis sont présents
+- ✓ Validation de la structure du tableau d'heures
+- ✓ Parsing de multiples entrées d'heures par jour
+- ✓ Extraction de multiples cookies
+- ✓ Extraction du header Location
+- ✓ Gestion du HTML malformé
+- ✓ Validation du format des heures (HH:MM)
+- ✓ Validation du format des dates (DD/MM/YYYY)
+
+**Note importante** : Tous les tests KelioClient utilisent des fixtures HTML capturées depuis daryl.kelio.io. Aucune requête HTTP réelle n'est effectuée pendant les tests - tout est mocké.
+
 ### Contrôleurs (Unit Tests)
 
 #### IconControllerTest
@@ -186,25 +205,33 @@ $output = $this->captureOutput(function() {
 });
 ```
 
-### Mocks Kelio
+### Fixtures Kelio
+
+Pour tester le KelioClient sans faire de requêtes réseau réelles :
 
 ```php
-use Tests\Mocks\KelioMock;
+use Tests\Fixtures\KelioHtmlFixtures;
 
-// Page de login
-$html = KelioMock::getLoginPage();
+// Page de login avec token CSRF réel
+$html = KelioHtmlFixtures::getLoginPage();
 
-// Page d'heures
-$html = KelioMock::getHoursPage([
-    '13-01-2026' => ['08:30', '18:30']
-]);
+// Page d'heures avec données de test
+$html = KelioHtmlFixtures::getHoursPage();
 
-// Données mockées
-$hours = KelioMock::getMockHoursData();
+// Page d'heures vide (aucune donnée)
+$html = KelioHtmlFixtures::getEmptyHoursPage();
 
-// Cookie de session
-$cookie = KelioMock::getMockSessionCookie();
+// Page d'erreur de login
+$html = KelioHtmlFixtures::getLoginErrorPage();
+
+// Cookie de session mocké
+$cookie = KelioHtmlFixtures::getSampleCookie();
+
+// Résultat attendu du parsing
+$expected = KelioHtmlFixtures::getExpectedParsedHours();
 ```
+
+**Toutes les fixtures sont capturées depuis daryl.kelio.io avec curl et ne changent jamais pendant les tests.**
 
 ## Couverture de Code
 
