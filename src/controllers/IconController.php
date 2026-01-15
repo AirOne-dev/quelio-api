@@ -8,9 +8,9 @@ class IconController
      */
     public function indexAction(): void
     {
-        // Get colors from query parameters, with midnight theme as default
-        $primary = $_GET['primary'] ?? 'DC2626';
-        $secondary = $_GET['secondary'] ?? '059669';
+        // Get colors from query parameters, with ocean theme as default
+        $primary = $_GET['primary'] ?? '0EA5E9';
+        $secondary = $_GET['secondary'] ?? '38BDF8';
 
         // Sanitize colors (remove # if present and validate hex)
         $primary = ltrim($primary, '#');
@@ -18,10 +18,10 @@ class IconController
 
         // Validate hex colors (6 characters, alphanumeric)
         if (!preg_match('/^[0-9A-Fa-f]{6}$/', $primary)) {
-            $primary = 'DC2626';
+            $primary = '0EA5E9';
         }
         if (!preg_match('/^[0-9A-Fa-f]{6}$/', $secondary)) {
-            $secondary = '059669';
+            $secondary = '38BDF8';
         }
 
         // Add # prefix for SVG

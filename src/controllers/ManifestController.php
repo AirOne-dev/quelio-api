@@ -9,9 +9,9 @@ class ManifestController
     public function indexAction(): void
     {
         // Get colors from query parameters
-        $primary = $_GET['primary'] ?? 'DC2626';
-        $secondary = $_GET['secondary'] ?? '059669';
-        $background = $_GET['background'] ?? '1a1d29';
+        $primary = $_GET['primary'] ?? '0EA5E9';
+        $secondary = $_GET['secondary'] ?? '38BDF8';
+        $background = $_GET['background'] ?? '1e293b';
 
         // Sanitize colors (remove # if present and validate hex)
         $primary = ltrim($primary, '#');
@@ -20,13 +20,13 @@ class ManifestController
 
         // Validate hex colors (6 characters, alphanumeric)
         if (!preg_match('/^[0-9A-Fa-f]{6}$/', $primary)) {
-            $primary = 'DC2626';
+            $primary = '0EA5E9';
         }
         if (!preg_match('/^[0-9A-Fa-f]{6}$/', $secondary)) {
-            $secondary = '059669';
+            $secondary = '38BDF8';
         }
         if (!preg_match('/^[0-9A-Fa-f]{6}$/', $background)) {
-            $background = '1a1d29';
+            $background = '1e293b';
         }
 
         // Add # prefix
