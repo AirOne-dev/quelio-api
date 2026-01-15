@@ -31,7 +31,7 @@ class KelioClientTest extends TestCase
         $csrfToken = $matches[1] ?? '';
 
         $this->assertNotEmpty($csrfToken);
-        $this->assertEquals('84eea639-c251-4661-b965-acbddd752367', $csrfToken);
+        $this->assertEquals('4a24e2fc-dea8-46ab-a9de-23b45eda7474', $csrfToken);
     }
 
     public function test_extracts_jsessionid_from_cookie_header(): void
@@ -43,7 +43,7 @@ class KelioClientTest extends TestCase
         $jsessionid = $matches[1] ?? '';
 
         $this->assertNotEmpty($jsessionid);
-        $this->assertStringContainsString('ABC123DEF456', $jsessionid);
+        $this->assertEquals('7609FB9D4BA5CBC343C73DA62522BFFE', $jsessionid);
     }
 
     public function test_parses_hours_from_html_table(): void
@@ -51,34 +51,35 @@ class KelioClientTest extends TestCase
         $html = KelioHtmlFixtures::getHoursPage();
         $expectedHours = KelioHtmlFixtures::getExpectedParsedHours();
 
-        // Test HTML parsing logic
+        // Test HTML parsing logic using real Kelio structure
         $dom = new \DOMDocument();
         @$dom->loadHTML($html);
         $xpath = new \DOMXPath($dom);
 
         $data = [];
 
-        // Find all rows with date cells
-        $rows = $xpath->query('//table//tr');
+        // Find all rows in the bordered table (Kelio's real structure)
+        $rows = $xpath->query('//table[@class="bordered"]/tr');
 
         for ($i = 1; $i < $rows->length; $i++) {
             $row = $rows->item($i);
 
-            // Get date from first cell
-            $dateCell = $xpath->query('.//td[@class="date"]', $row)->item(0);
+            // Get date from link with onclick attribute
+            $dateLink = $xpath->query('.//a[contains(@onclick, "fcAfficherBadgeagesJour")]', $row)->item(0);
 
-            if ($dateCell) {
-                $date = trim($dateCell->textContent);
+            if ($dateLink && preg_match('/(\d{2}\/\d{2}\/\d{4})/', $dateLink->textContent, $matches)) {
+                $date = $matches[1];
                 $times = [];
 
-                // Get all time cells (class="heure")
-                $timeCells = $xpath->query('.//td[@class="heure"]', $row);
-                foreach ($timeCells as $cell) {
+                // Find all time cells (nested table structure with width="*")
+                $tdCells = $xpath->query('.//table[@width="100%"]//td[@width="*"]', $row);
+                foreach ($tdCells as $cell) {
                     $timeText = trim($cell->textContent);
-                    // Skip empty cells (HTML entities are decoded, so &nbsp; becomes a space/non-breaking space)
-                    // Also check if it matches HH:MM format
-                    if ($timeText && preg_match('/^\d{2}:\d{2}$/', $timeText)) {
-                        $times[] = $timeText;
+                    // Clean up non-breaking spaces and other whitespace
+                    $time = trim(str_replace(["\xC2\xA0", "&nbsp;", " "], '', $timeText));
+                    // Check if it matches HH:MM format
+                    if ($time && preg_match('/^\d{2}:\d{2}$/', $time)) {
+                        $times[] = $time;
                     }
                 }
 
@@ -89,14 +90,14 @@ class KelioClientTest extends TestCase
         }
 
         $this->assertCount(3, $data);
+        $this->assertArrayHasKey('12/01/2026', $data);
         $this->assertArrayHasKey('13/01/2026', $data);
         $this->assertArrayHasKey('14/01/2026', $data);
-        $this->assertArrayHasKey('15/01/2026', $data);
 
         // Verify exact times match expected
+        $this->assertEquals($expectedHours['12/01/2026'], $data['12/01/2026']);
         $this->assertEquals($expectedHours['13/01/2026'], $data['13/01/2026']);
         $this->assertEquals($expectedHours['14/01/2026'], $data['14/01/2026']);
-        $this->assertEquals($expectedHours['15/01/2026'], $data['15/01/2026']);
     }
 
     public function test_handles_empty_hours_page(): void
@@ -159,15 +160,13 @@ class KelioClientTest extends TestCase
     {
         $html = KelioHtmlFixtures::getHoursPage();
 
-        // Verify table structure
-        $this->assertStringContainsString('class="planning-table"', $html);
-        $this->assertStringContainsString('<thead>', $html);
-        $this->assertStringContainsString('<tbody>', $html);
+        // Verify real table structure from Kelio
+        $this->assertStringContainsString('class="bordered"', $html);
+        $this->assertStringContainsString('class="tabTitre', $html);
+        $this->assertStringContainsString('fcAfficherBadgeagesJour', $html);
 
-        // Verify column headers
-        $this->assertStringContainsString('<th>Date</th>', $html);
-        $this->assertStringContainsString('<th>Heure 1</th>', $html);
-        $this->assertStringContainsString('<th>Heure 8</th>', $html);
+        // Verify column header exists
+        $this->assertStringContainsString('<th class="tabTitre tabTitreFirst"', $html);
     }
 
     public function test_parses_multiple_time_entries_per_day(): void
@@ -175,9 +174,9 @@ class KelioClientTest extends TestCase
         $html = KelioHtmlFixtures::getHoursPage();
         $expectedHours = KelioHtmlFixtures::getExpectedParsedHours();
 
-        // Verify day with 6 time entries (breaks included)
-        $this->assertCount(6, $expectedHours['14/01/2026']);
-        $this->assertEquals(['08:30', '10:30', '10:45', '12:00', '13:00', '17:30'], $expectedHours['14/01/2026']);
+        // Verify days with 4 time entries (real data from Martin's account)
+        $this->assertCount(4, $expectedHours['12/01/2026']);
+        $this->assertEquals(['08:30', '10:43', '10:47', '12:02'], $expectedHours['12/01/2026']);
     }
 
     public function test_cookie_extraction_handles_multiple_cookies(): void

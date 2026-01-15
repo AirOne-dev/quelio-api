@@ -10,7 +10,7 @@ class KelioHtmlFixtures
 {
     /**
      * Login page with CSRF token
-     * Captured from: https://daryl.kelio.io/open/
+     * Captured from: https://daryl.kelio.io/open/login (January 15, 2026)
      */
     public static function getLoginPage(): string
     {
@@ -20,8 +20,10 @@ class KelioHtmlFixtures
 <head>
     <title>Kelio</title>
     <meta name="theme-color" content="#1BA4D9">
+    <link rel="manifest" href="/open/manifest/manifest.1761908880000.json">
     <meta http-equiv="content-type" content="text/html; charset=UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noodp">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 </head>
 <body class="fondDefault">
@@ -44,7 +46,7 @@ class KelioHtmlFixtures
                         Mot de passe oublié ?
                     </a>
                     <br/>
-                    <input type="hidden" name="_csrf_bodet" value="84eea639-c251-4661-b965-acbddd752367" />
+                    <input type="hidden" name="_csrf_bodet" value="4a24e2fc-dea8-46ab-a9de-23b45eda7474" />
                 </form>
             </div>
         </div>
@@ -56,7 +58,8 @@ HTML;
 
     /**
      * Hours page with time entries
-     * Simulated based on Kelio table structure
+     * Real HTML structure from daryl.kelio.io (January 15, 2026)
+     * Captured with martin's account showing real work hours
      */
     public static function getHoursPage(): string
     {
@@ -64,62 +67,157 @@ HTML;
 <!doctype html>
 <html>
 <head>
-    <title>Kelio - Mes horaires</title>
-    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>Visualiser la présence</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="robots" content="noindex, nofollow, noarchive,nosnippet, noodp">
 </head>
 <body>
-    <div id="content">
-        <table class="planning-table">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Heure 1</th>
-                    <th>Heure 2</th>
-                    <th>Heure 3</th>
-                    <th>Heure 4</th>
-                    <th>Heure 5</th>
-                    <th>Heure 6</th>
-                    <th>Heure 7</th>
-                    <th>Heure 8</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td class="date">13/01/2026</td>
-                    <td class="heure">08:30</td>
-                    <td class="heure">12:00</td>
-                    <td class="heure">13:00</td>
-                    <td class="heure">18:30</td>
-                    <td class="heure">&nbsp;</td>
-                    <td class="heure">&nbsp;</td>
-                    <td class="heure">&nbsp;</td>
-                    <td class="heure">&nbsp;</td>
-                </tr>
-                <tr>
-                    <td class="date">14/01/2026</td>
-                    <td class="heure">08:30</td>
-                    <td class="heure">10:30</td>
-                    <td class="heure">10:45</td>
-                    <td class="heure">12:00</td>
-                    <td class="heure">13:00</td>
-                    <td class="heure">17:30</td>
-                    <td class="heure">&nbsp;</td>
-                    <td class="heure">&nbsp;</td>
-                </tr>
-                <tr>
-                    <td class="date">15/01/2026</td>
-                    <td class="heure">08:30</td>
-                    <td class="heure">12:00</td>
-                    <td class="heure">12:45</td>
-                    <td class="heure">18:00</td>
-                    <td class="heure">&nbsp;</td>
-                    <td class="heure">&nbsp;</td>
-                    <td class="heure">&nbsp;</td>
-                    <td class="heure">&nbsp;</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+    <table width="100%" class="bordered">
+        <tr align="center">
+            <th class="tabTitre tabTitreFirst" width="3%">Jour</th>
+            <th class="tabTitre" width="1%"><img border="0" src="/open/img/vide.1761908880000.gif" height="1" width="13" alt=""></th>
+            <th class="tabTitre" width="17%">1</th>
+            <th class="tabTitre" width="17%">2</th>
+            <th class="tabTitre" width="17%">3</th>
+            <th class="tabTitre" width="17%">4</th>
+            <th class="tabTitre" width="1%"><img border="0" src="/open/img/vide.1761908880000.gif" height="1" width="13" alt=""></th>
+        </tr>
+
+        <tr align="center">
+            <td height="20" class="tabPair">
+                <a href="javascript:void(0)" onclick="javascript:fcAfficherBadgeagesJour('12/01/2026')" class="lien12">12/01/2026</a>
+            </td>
+            <td class="tabPair"><a href="javascript:void(0)" onclick="javascript:fcChangerOffset(-4)"><img name="imageMoins" id="imageMoins" src="/open/img/vide.1761908880000.gif" border="0"  alt="" title=""  style='padding-right: 3px'></a></td>
+
+            <td class="tabPair" colspan="0 %>">
+                <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td class="tabPair" width="*" align="center" title="">08:30&nbsp;</td>
+                        <td class="tabPair" width="15"><img name="" id="" src="/open/images/badgeage/icn_badgeage_from_terminal.1763364751747.png" border="0"  alt="" title=""  style='padding-right: 3px' ></td>
+                    </tr>
+                </table>
+            </td>
+
+            <td class="tabPair" colspan="0 %>">
+                <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td class="tabPair" width="*" align="center" title="">10:43&nbsp;</td>
+                        <td class="tabPair" width="15"><img name="" id="" src="/open/images/badgeage/icn_badgeage_from_terminal.1763364751747.png" border="0"  alt="" title=""  style='padding-right: 3px' ></td>
+                    </tr>
+                </table>
+            </td>
+
+            <td class="tabPair" colspan="0 %>">
+                <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td class="tabPair" width="*" align="center" title="">10:47&nbsp;</td>
+                        <td class="tabPair" width="15"><img name="" id="" src="/open/images/badgeage/icn_badgeage_from_terminal.1763364751747.png" border="0"  alt="" title=""  style='padding-right: 3px' ></td>
+                    </tr>
+                </table>
+            </td>
+
+            <td class="tabPair" colspan="0 %>">
+                <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td class="tabPair" width="*" align="center" title="">12:02&nbsp;</td>
+                        <td class="tabPair" width="15"><img name="" id="" src="/open/images/badgeage/icn_badgeage_from_terminal.1763364751747.png" border="0"  alt="" title=""  style='padding-right: 3px' ></td>
+                    </tr>
+                </table>
+            </td>
+
+            <td class="tabPair"><a href="javascript:void(0)" onclick="javascript:fcChangerOffset(4)"><img name="imagePlus" id="imagePlus" src="/open/img/navRight.1761908880000.png" border="0"  alt="" title=""  style='padding-right: 3px'></a></td>
+        </tr>
+
+        <tr align="center">
+            <td height="20" class="tabImpair">
+                <a href="javascript:void(0)" onclick="javascript:fcAfficherBadgeagesJour('13/01/2026')" class="lien12">13/01/2026</a>
+            </td>
+            <td class="tabImpair"><a href="javascript:void(0)" onclick="javascript:fcChangerOffset(-4)"><img name="imageMoins" id="imageMoins" src="/open/img/vide.1761908880000.gif" border="0"  alt="" title=""  style='padding-right: 3px'></a></td>
+
+            <td class="tabImpair" colspan="0 %>">
+                <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td class="tabImpair" width="*" align="center" title="">08:30&nbsp;</td>
+                        <td class="tabImpair" width="15"><img name="" id="" src="/open/images/badgeage/icn_badgeage_from_terminal.1763364751747.png" border="0"  alt="" title=""  style='padding-right: 3px' ></td>
+                    </tr>
+                </table>
+            </td>
+
+            <td class="tabImpair" colspan="0 %>">
+                <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td class="tabImpair" width="*" align="center" title="">10:35&nbsp;</td>
+                        <td class="tabImpair" width="15"><img name="" id="" src="/open/images/badgeage/icn_badgeage_from_terminal.1763364751747.png" border="0"  alt="" title=""  style='padding-right: 3px' ></td>
+                    </tr>
+                </table>
+            </td>
+
+            <td class="tabImpair" colspan="0 %>">
+                <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td class="tabImpair" width="*" align="center" title="">10:46&nbsp;</td>
+                        <td class="tabImpair" width="15"><img name="" id="" src="/open/images/badgeage/icn_badgeage_from_terminal.1763364751747.png" border="0"  alt="" title=""  style='padding-right: 3px' ></td>
+                    </tr>
+                </table>
+            </td>
+
+            <td class="tabImpair" colspan="0 %>">
+                <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td class="tabImpair" width="*" align="center" title="">12:16&nbsp;</td>
+                        <td class="tabImpair" width="15"><img name="" id="" src="/open/images/badgeage/icn_badgeage_from_terminal.1763364751747.png" border="0"  alt="" title=""  style='padding-right: 3px' ></td>
+                    </tr>
+                </table>
+            </td>
+
+            <td class="tabImpair"><a href="javascript:void(0)" onclick="javascript:fcChangerOffset(4)"><img name="imagePlus" id="imagePlus" src="/open/img/navRight.1761908880000.png" border="0"  alt="" title=""  style='padding-right: 3px'></a></td>
+        </tr>
+
+        <tr align="center">
+            <td height="20" class="tabPair">
+                <a href="javascript:void(0)" onclick="javascript:fcAfficherBadgeagesJour('14/01/2026')" class="lien12">14/01/2026</a>
+            </td>
+            <td class="tabPair"><a href="javascript:void(0)" onclick="javascript:fcChangerOffset(-4)"><img name="imageMoins" id="imageMoins" src="/open/img/vide.1761908880000.gif" border="0"  alt="" title=""  style='padding-right: 3px'></a></td>
+
+            <td class="tabPair" colspan="0 %>">
+                <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td class="tabPair" width="*" align="center" title="">08:30&nbsp;</td>
+                        <td class="tabPair" width="15"><img name="" id="" src="/open/images/badgeage/icn_badgeage_from_terminal.1763364751747.png" border="0"  alt="" title=""  style='padding-right: 3px' ></td>
+                    </tr>
+                </table>
+            </td>
+
+            <td class="tabPair" colspan="0 %>">
+                <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td class="tabPair" width="*" align="center" title="">10:40&nbsp;</td>
+                        <td class="tabPair" width="15"><img name="" id="" src="/open/images/badgeage/icn_badgeage_from_terminal.1763364751747.png" border="0"  alt="" title=""  style='padding-right: 3px' ></td>
+                    </tr>
+                </table>
+            </td>
+
+            <td class="tabPair" colspan="0 %>">
+                <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td class="tabPair" width="*" align="center" title="">10:47&nbsp;</td>
+                        <td class="tabPair" width="15"><img name="" id="" src="/open/images/badgeage/icn_badgeage_from_terminal.1763364751747.png" border="0"  alt="" title=""  style='padding-right: 3px' ></td>
+                    </tr>
+                </table>
+            </td>
+
+            <td class="tabPair" colspan="0 %>">
+                <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td class="tabPair" width="*" align="center" title="">12:02&nbsp;</td>
+                        <td class="tabPair" width="15"><img name="" id="" src="/open/images/badgeage/icn_badgeage_from_terminal.1763364751747.png" border="0"  alt="" title=""  style='padding-right: 3px' ></td>
+                    </tr>
+                </table>
+            </td>
+
+            <td class="tabPair"><a href="javascript:void(0)" onclick="javascript:fcChangerOffset(4)"><img name="imagePlus" id="imagePlus" src="/open/img/navRight.1761908880000.png" border="0"  alt="" title=""  style='padding-right: 3px'></a></td>
+        </tr>
+    </table>
 </body>
 </html>
 HTML;
@@ -186,22 +284,23 @@ HTML;
     }
 
     /**
-     * Get sample JSESSIONID cookie
+     * Get sample JSESSIONID cookie (real format from daryl.kelio.io)
      */
     public static function getSampleCookie(): string
     {
-        return 'JSESSIONID=ABC123DEF456GHI789JKL012MNO345PQR678STU901VWX234YZ;Path=/;HttpOnly';
+        return 'JSESSIONID=7609FB9D4BA5CBC343C73DA62522BFFE;Path=/open;Secure;HttpOnly';
     }
 
     /**
      * Get expected parsed hours from getHoursPage()
+     * These match the real data from Martin's account (January 12-14, 2026)
      */
     public static function getExpectedParsedHours(): array
     {
         return [
-            '13/01/2026' => ['08:30', '12:00', '13:00', '18:30'],
-            '14/01/2026' => ['08:30', '10:30', '10:45', '12:00', '13:00', '17:30'],
-            '15/01/2026' => ['08:30', '12:00', '12:45', '18:00'],
+            '12/01/2026' => ['08:30', '10:43', '10:47', '12:02'],
+            '13/01/2026' => ['08:30', '10:35', '10:46', '12:16'],
+            '14/01/2026' => ['08:30', '10:40', '10:47', '12:02'],
         ];
     }
 }
