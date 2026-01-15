@@ -48,6 +48,26 @@ return [
     'afternoon_break_threshold' => 16 * 60, // 16h00
 
     /**
+     * Pause minimum obligatoire le midi en minutes
+     * Si la pause réelle entre 12h et 14h est inférieure à cette durée,
+     * cette durée minimum sera déduite des heures payées
+     * Exemple : 60 minutes = 1 heure minimum
+     */
+    'noon_minimum_break' => 60, // 1 heure
+
+    /**
+     * Heure de début de la plage de pause midi (format : heures * 60)
+     * Exemple : 12h00 = 12 * 60 = 720
+     */
+    'noon_break_start' => 12 * 60, // 12h00
+
+    /**
+     * Heure de fin de la plage de pause midi (format : heures * 60)
+     * Exemple : 14h00 = 14 * 60 = 840
+     */
+    'noon_break_end' => 14 * 60, // 14h00
+
+    /**
      * Activer l'accès via GET (affichage du formulaire HTML)
      * Si false, seul l'accès POST (API) sera autorisé
      * Recommandé : false pour un usage en production (API uniquement)

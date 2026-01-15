@@ -57,6 +57,9 @@ class TimeCalculator
 
         $startLimit = $this->config['start_limit_minutes'];
         $endLimit = $this->config['end_limit_minutes'];
+        $noonBreakStart = $this->config['noon_break_start'];
+        $noonBreakEnd = $this->config['noon_break_end'];
+        $noonMinimumBreak = $this->config['noon_minimum_break'];
 
         foreach ($arrayData as $date => $hours) {
             $dailyMinutes = 0;
@@ -111,11 +114,60 @@ class TimeCalculator
                 }
             }
 
+            // Apply noon minimum break rule (only when pause bonus is applied)
+            if ($pause > 0) {
+                $noonBreakDuration = $this->calculateNoonBreak($hours, $noonBreakStart, $noonBreakEnd);
+                if ($noonBreakDuration !== null && $noonBreakDuration < $noonMinimumBreak) {
+                    // If actual noon break is less than minimum, deduct the minimum instead of actual
+                    $dailyMinutes -= $noonMinimumBreak;
+                } else if ($noonBreakDuration !== null) {
+                    // If actual noon break is >= minimum, deduct the actual break
+                    $dailyMinutes -= $noonBreakDuration;
+                }
+            }
+
             $totalMinutes += $dailyMinutes;
         }
 
         $h = floor($totalMinutes / 60);
         $m = $totalMinutes % 60;
         return sprintf("%02d:%02d", $h, $m);
+    }
+
+    /**
+     * Calculate noon break duration in minutes
+     * Returns null if no break was taken during noon window
+     * @param array $hours Array of times for the day
+     * @param int $noonStart Start of noon window (in minutes)
+     * @param int $noonEnd End of noon window (in minutes)
+     * @return int|null
+     */
+    private function calculateNoonBreak(array $hours, int $noonStart, int $noonEnd): ?int
+    {
+        $nbHours = count($hours);
+
+        // Need at least 2 pairs of times to have a break
+        if ($nbHours < 3) {
+            return null;
+        }
+
+        // Look for breaks that overlap with noon window (12h-14h)
+        for ($i = 1; $i < $nbHours - 1; $i += 2) {
+            $breakStart = explode(':', $hours[$i]);
+            $breakEnd = explode(':', $hours[$i + 1]);
+
+            $breakStartMinutes = intval($breakStart[0]) * 60 + intval($breakStart[1]);
+            $breakEndMinutes = intval($breakEnd[0]) * 60 + intval($breakEnd[1]);
+
+            // Check if this break overlaps with noon window
+            if ($breakStartMinutes < $noonEnd && $breakEndMinutes > $noonStart) {
+                // Calculate the overlap
+                $overlapStart = max($breakStartMinutes, $noonStart);
+                $overlapEnd = min($breakEndMinutes, $noonEnd);
+                return $overlapEnd - $overlapStart;
+            }
+        }
+
+        return null;
     }
 }
