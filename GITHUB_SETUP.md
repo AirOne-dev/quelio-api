@@ -43,7 +43,7 @@ Par exemple :
 
 ### Les 3 jobs de la CI :
 
-1. **test** : Lance les tests sur PHP 8.0, 8.1, 8.2, 8.3
+1. **test** : Lance les tests sur PHP 8.1, 8.2, 8.3
 2. **coverage-check** : Vérifie que la couverture est ≥ 90%
 3. **quality** : Vérifie qu'il n'y a pas de tests incomplete/risky/warnings
 
@@ -58,7 +58,6 @@ Pour forcer les tests à passer avant de merger :
    - ✅ Require status checks to pass before merging
    - ✅ Require branches to be up to date before merging
 5. Dans "Status checks", chercher et sélectionner :
-   - `test (8.0)`
    - `test (8.1)`
    - `test (8.2)`
    - `test (8.3)`
@@ -71,7 +70,7 @@ Pour forcer les tests à passer avant de merger :
 Une fois configuré, vous aurez :
 
 ✅ **CI/CD automatique** à chaque push (100% gratuit)
-✅ **177 tests** lancés sur 4 versions de PHP
+✅ **177 tests** lancés sur 3 versions de PHP (8.1, 8.2, 8.3)
 ✅ **Couverture minimale de 90%** vérifiée
 ✅ **Badges** sur le README montrant le statut
 ✅ **Protection de la branche main** (tests obligatoires)

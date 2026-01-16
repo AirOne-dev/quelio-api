@@ -3,7 +3,7 @@
     "description": "Quel.io API - Time tracking with Kelio integration",
     "type": "project",
     "require": {
-        "php": ">=8.0"
+        "php": ">=8.1"
     },
     "require-dev": {
         "phpunit/phpunit": "^10.5"

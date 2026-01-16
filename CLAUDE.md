@@ -4,7 +4,7 @@ PHP 8 REST API for time tracking with Kelio integration.
 
 ## Tech Stack
 
-- **Language**: PHP 8.0+
+- **Language**: PHP 8.1+ (required for PHPUnit 10.5)
 - **Architecture**: MVC with Dependency Injection
 - **HTTP Client**: cURL for Kelio integration
 - **Data Storage**: JSON file-based (no database)

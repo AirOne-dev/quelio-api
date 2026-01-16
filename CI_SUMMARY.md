@@ -7,8 +7,9 @@
 **3 jobs automatiques** à chaque push/PR :
 
 #### Job 1: Tests Multi-versions PHP
-- ✅ Lance 177 tests sur **PHP 8.0, 8.1, 8.2, 8.3**
+- ✅ Lance 177 tests sur **PHP 8.1, 8.2, 8.3**
 - ✅ Rapide (pas de génération de coverage)
+- ℹ️ PHP 8.0 non supporté (PHPUnit 10.5 nécessite PHP 8.1+)
 
 #### Job 2: Vérification Coverage
 - ✅ **Minimum 90% de couverture requis**
@@ -58,14 +59,14 @@ git push origin bugfix/noon-minimum-break
 2. **Activer Branch Protection** (optionnel mais recommandé) :
    - Settings → Branches → Add rule
    - Cocher "Require status checks to pass before merging"
-   - Sélectionner les 6 jobs (test x4 + coverage-check + quality)
+   - Sélectionner les 5 jobs (test x3 + coverage-check + quality)
 
 ## Résultats Attendus
 
 Une fois configuré, **à chaque push** :
 
 1. ⚡ La CI se lance automatiquement (100% gratuit)
-2. 🧪 177 tests s'exécutent sur 4 versions PHP (< 2 min)
+2. 🧪 177 tests s'exécutent sur 3 versions PHP (8.1, 8.2, 8.3) (< 2 min)
 3. 📊 La couverture est calculée et vérifiée (≥90%)
 4. ✅ Les badges se mettent à jour automatiquement
 5. 🚫 Impossible de merger si un test échoue (avec branch protection)
@@ -76,7 +77,6 @@ Une fois configuré, **à chaque push** :
 PR: Add new feature
 
 Checks:
-✅ test (8.0) — 177 tests passed
 ✅ test (8.1) — 177 tests passed
 ✅ test (8.2) — 177 tests passed
 ✅ test (8.3) — 177 tests passed

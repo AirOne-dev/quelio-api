@@ -2,7 +2,7 @@
 
 [![Tests](https://github.com/AirOne-dev/quelio-api/actions/workflows/tests.yml/badge.svg)](https://github.com/AirOne-dev/quelio-api/actions/workflows/tests.yml)
 [![Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen.svg)](https://github.com/AirOne-dev/quelio-api)
-[![PHP](https://img.shields.io/badge/PHP-8.0%2B-blue.svg)](https://www.php.net)
+[![PHP](https://img.shields.io/badge/PHP-8.1%2B-blue.svg)](https://www.php.net)
 [![Tests](https://img.shields.io/badge/tests-177%20passed-brightgreen.svg)](https://github.com/AirOne-dev/quelio-api)
 
 API PHP pour récupérer et calculer les heures de travail depuis Kelio.
@@ -181,7 +181,7 @@ Le projet dispose d'une suite de tests complète avec **177 tests** et **~95% de
 ### CI/CD GitHub Actions
 
 La CI vérifie automatiquement à chaque push (100% gratuit) :
-- ✅ Tous les tests passent (177 tests sur PHP 8.0, 8.1, 8.2, 8.3)
+- ✅ Tous les tests passent (177 tests sur PHP 8.1, 8.2, 8.3)
 - ✅ Couverture minimale de 90% respectée
 - ✅ Aucun test incomplet, risky ou warning
 - ✅ Nombre de tests vérifié (177 minimum)
