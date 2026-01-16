@@ -4,7 +4,7 @@ PHP 8 REST API for time tracking with Kelio integration.
 
 ## Tech Stack
 
-- **Language**: PHP 8.0+
+- **Language**: PHP 8.1+ (required for PHPUnit 10.5)
 - **Architecture**: MVC with Dependency Injection
 - **HTTP Client**: cURL for Kelio integration
 - **Data Storage**: JSON file-based (no database)
@@ -28,6 +28,9 @@ api/
 ## Common Commands
 
 - Start dev server: `php -S localhost:8080` (or use Docker)
+- Run tests: `./run-tests.sh` (uses Docker, no local PHP needed)
+- Run specific test: `./run-tests.sh --filter TimeCalculatorTest`
+- Generate coverage: `./run-tests.sh --coverage`
 - Test login: `curl -X POST http://localhost:8080/ -d "username=user&password=pass"`
 - Access raw data: `GET /data.json` (requires admin credentials)
 
@@ -95,9 +98,26 @@ Critical settings in config.php:
 - `encryption_key` - AES-256 key (32+ characters)
 - `admin_username` / `admin_password` - Admin credentials
 - `pause_time` - Break duration (default: 7 minutes)
+- `noon_minimum_break` - Minimum lunch break (default: 7 minutes)
+- `noon_break_start` / `noon_break_end` - Lunch break window (11h00-14h00)
 - `start_limit_minutes` / `end_limit_minutes` - Work day boundaries
+- `morning_break_threshold` / `afternoon_break_threshold` - Auto-break thresholds
 - `rate_limit_max_attempts` - Failed login attempts (default: 5)
+- `rate_limit_window` - Rate limit window in seconds (default: 300)
 - `debug_mode` - Enable verbose errors and pretty JSON
+
+## Business Rules
+
+### Time Calculation (TimeCalculator)
+1. **Noon Minimum Break**: If work spans lunch period (11h00-14h00), minimum 7-minute break is enforced
+2. **Automatic Breaks**: Morning/afternoon breaks added based on thresholds (not deducted at noon)
+3. **Paid Hours**: Effective hours + configured pause_time bonus
+4. **Break Deduction Limit**: Never deduct more than the pause_time bonus
+
+Example:
+- Work: 08:30-18:30 (10h effective, spans noon)
+- Minimum noon break: 7 min deducted
+- Result: 9h53 effective, 10h00 paid (with 7min bonus)
 
 ## Security Notes
 
@@ -119,6 +139,30 @@ Critical settings in config.php:
 7. Set config.php permissions to 600
 8. Configure web server URL rewriting (.htaccess or nginx.conf)
 
+## Testing
+
+- **Framework**: PHPUnit 10.5 via Docker (no local PHP needed)
+- **Coverage**: ~95% code coverage (177 tests, 390 assertions)
+- **Status**: 100% passing, 0 incomplete, 0 warnings, 0 deprecations
+- **Structure**:
+  - Feature Tests: 15 tests - End-to-end router integration
+  - Unit Tests: 162 tests - Services, controllers, middleware
+  - Fixtures: Real HTML from Kelio API (not mocks)
+
+Quick test commands:
+```bash
+./run-tests.sh              # All tests (177 tests)
+./run-tests.sh --unit       # Unit tests only (162 tests)
+./run-tests.sh --filter AuthTest  # Specific test
+./run-tests.sh --coverage   # Generate HTML coverage report
+```
+
+Test categories:
+- Services: Auth, Storage, KelioClient, RateLimiter, TimeCalculator
+- Controllers: Base, BaseGuest, Data, Icon, Manifest
+- Middleware: AuthMiddleware (token & credential auth)
+- Feature: ApiRoutesTest (all HTTP routes end-to-end)
+
 ## Notes
 
 - Kelio limitation: API returns max 4 items per request (3 requests needed)
@@ -126,3 +170,4 @@ Critical settings in config.php:
 - File locking prevents data corruption during concurrent access
 - Current day handled specially (incomplete day with odd hours)
 - Break logic: conditionally adds morning/afternoon breaks based on thresholds
+- Tests run in Docker - no local PHP installation required

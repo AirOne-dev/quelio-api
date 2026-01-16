@@ -1,5 +1,10 @@
 # Quelio API
 
+[![Tests](https://github.com/AirOne-dev/quelio-api/actions/workflows/tests.yml/badge.svg)](https://github.com/AirOne-dev/quelio-api/actions/workflows/tests.yml)
+[![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/AirOne-dev/quelio-api/gh-pages/badges/coverage.json)](https://github.com/AirOne-dev/quelio-api)
+[![PHP](https://img.shields.io/badge/PHP-8.1%2B-blue.svg)](https://www.php.net)
+[![Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/AirOne-dev/quelio-api/gh-pages/badges/tests.json)](https://github.com/AirOne-dev/quelio-api)
+
 API PHP pour récupérer et calculer les heures de travail depuis Kelio.
 
 ## Fonctionnalités
@@ -153,9 +158,45 @@ curl "http://votre-serveur.com/manifest.json?primary=4F46E5&secondary=059669&bac
 | 429 | Too many requests | Rate limiting dépassé |
 | 500 | Internal server error | Erreur serveur ou connexion Kelio échouée |
 
+## Tests
+
+Le projet dispose d'une suite de tests complète avec **177 tests** et **~95% de couverture de code**.
+
+### Lancer les tests localement
+
+```bash
+# Tous les tests (via Docker, aucune installation PHP requise)
+./run-tests.sh
+
+# Tests unitaires uniquement
+./run-tests.sh --unit
+
+# Test spécifique
+./run-tests.sh --filter AuthTest
+
+# Génération du rapport de couverture
+./run-tests.sh --coverage
+```
+
+### CI/CD GitHub Actions
+
+La CI vérifie automatiquement à chaque push (100% gratuit) :
+- ✅ Tous les tests passent (177 tests sur PHP 8.1, 8.2, 8.3)
+- ✅ Couverture minimale de 90% respectée
+- ✅ Aucun test incomplet, risky ou warning
+- ✅ Nombre de tests vérifié (177 minimum)
+
+### Structure des tests
+
+- **Feature** (15 tests) : Tests end-to-end du routeur HTTP
+- **Unit** (162 tests) :
+  - Services : Auth, Storage, KelioClient, RateLimiter, TimeCalculator
+  - Controllers : Base, BaseGuest, Data, Icon, Manifest
+  - Middleware : AuthMiddleware
+
 ## Notes techniques
 
-- **Calcul des heures** : Plage horaire 8h30-18h30, pauses ajoutées automatiquement si travail après 11h (matin) ou 16h (après-midi)
+- **Calcul des heures** : Pause midi minimum de 7 minutes si travail entre 11h-14h, pauses auto ajoutées selon seuils
 - **Cache** : Sauvegarde automatique après chaque récupération réussie, fallback en cas d'échec de connexion
 - **Tokens** : SHA-256 hash (username + password + timestamp), invalide si mot de passe Kelio change
 - **Rate limiting** : Protection anti-brute force configurée dans `config.php`

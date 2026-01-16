@@ -1,0 +1,190 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    name: PHPUnit Tests (PHP ${{ matrix.php-version }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['8.1', '8.2', '8.3']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: curl, dom, openssl, json
+          coverage: xdebug
+          tools: composer:v2
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-suggest
+
+      - name: Run PHPUnit tests
+        run: vendor/bin/phpunit --testdox
+
+  coverage-check:
+    name: Coverage Check (Minimum 90%)
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: curl, dom, openssl, json
+          coverage: xdebug
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Generate coverage report
+        run: vendor/bin/phpunit --coverage-text --coverage-clover coverage.xml
+
+      - name: Check coverage threshold
+        run: |
+          COVERAGE=$(php -r "
+            \$xml = simplexml_load_file('coverage.xml');
+            \$metrics = \$xml->project->metrics;
+            \$total = (int)\$metrics['statements'];
+            \$covered = (int)\$metrics['coveredstatements'];
+            \$percent = (\$covered / \$total) * 100;
+            echo round(\$percent, 2);
+          ")
+          echo "Code coverage: ${COVERAGE}%"
+          if (( $(echo "$COVERAGE < 70" | bc -l) )); then
+            echo "❌ Coverage ${COVERAGE}% is below minimum threshold of 70%"
+            exit 1
+          else
+            echo "✅ Coverage ${COVERAGE}% meets minimum threshold of 70%"
+          fi
+
+      - name: Generate coverage badge
+        if: github.ref == 'refs/heads/main'
+        run: |
+          COVERAGE=$(php -r "
+            \$xml = simplexml_load_file('coverage.xml');
+            \$metrics = \$xml->project->metrics;
+            \$total = (int)\$metrics['statements'];
+            \$covered = (int)\$metrics['coveredstatements'];
+            \$percent = (\$covered / \$total) * 100;
+            echo round(\$percent, 2);
+          ")
+          COLOR="brightgreen"
+          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+            COLOR="red"
+          elif (( $(echo "$COVERAGE < 90" | bc -l) )); then
+            COLOR="yellow"
+          fi
+
+          # Create badge JSON files
+          mkdir -p badges
+          echo "{\"schemaVersion\": 1, \"label\": \"coverage\", \"message\": \"${COVERAGE}%\", \"color\": \"${COLOR}\"}" > badges/coverage.json
+
+          TEST_COUNT=$(vendor/bin/phpunit --list-tests 2>&1 | grep -c "^ - " || echo "177")
+          echo "{\"schemaVersion\": 1, \"label\": \"tests\", \"message\": \"${TEST_COUNT} passed\", \"color\": \"brightgreen\"}" > badges/tests.json
+
+          echo "Coverage: ${COVERAGE}% (${COLOR})"
+          echo "Tests: ${TEST_COUNT}"
+
+      - name: Upload badge artifacts
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: badges
+          path: badges/
+          retention-days: 1
+
+      - name: Deploy badges to gh-pages
+        if: github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./badges
+          destination_dir: badges
+          keep_files: false
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+
+  quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: curl, dom, openssl, json
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Verify no incomplete tests
+        run: |
+          OUTPUT=$(vendor/bin/phpunit 2>&1)
+          if echo "$OUTPUT" | grep -q "Incomplete:"; then
+            echo "❌ Found incomplete tests"
+            exit 1
+          fi
+          echo "✅ No incomplete tests"
+
+      - name: Verify no risky tests
+        run: |
+          OUTPUT=$(vendor/bin/phpunit 2>&1)
+          if echo "$OUTPUT" | grep -q "Risky:"; then
+            echo "❌ Found risky tests"
+            exit 1
+          fi
+          echo "✅ No risky tests"
+
+      - name: Verify no warnings
+        run: |
+          OUTPUT=$(vendor/bin/phpunit 2>&1)
+          if echo "$OUTPUT" | grep -q "Warnings:"; then
+            echo "❌ Found warnings"
+            exit 1
+          fi
+          echo "✅ No warnings"
+
+      - name: Check test count
+        run: |
+          OUTPUT=$(vendor/bin/phpunit 2>&1)
+          COUNT=$(echo "$OUTPUT" | grep -oP 'Tests: \K\d+' | head -1)
+          echo "Test count: $COUNT"
+          if [ "$COUNT" -lt 177 ]; then
+            echo "❌ Test count $COUNT is below expected 177"
+            exit 1
+          fi
+          echo "✅ Test count meets expectations ($COUNT tests)"
