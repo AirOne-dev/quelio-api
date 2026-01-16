@@ -180,11 +180,11 @@ Le projet dispose d'une suite de tests complète avec **177 tests** et **~95% de
 
 ### CI/CD GitHub Actions
 
-La CI vérifie automatiquement à chaque push (100% gratuit) :
-- ✅ Tous les tests passent (177 tests sur PHP 8.1, 8.2, 8.3)
-- ✅ Couverture minimale de 90% respectée
+La CI vérifie automatiquement à chaque push :
+- ✅ Tous les tests passent
+- ✅ Couverture minimale de 80% respectée
 - ✅ Aucun test incomplet, risky ou warning
-- ✅ Nombre de tests vérifié (177 minimum)
+- ✅ Nombre de tests vérifié
 
 ### Structure des tests
 

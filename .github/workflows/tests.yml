@@ -46,7 +46,7 @@ jobs:
         run: vendor/bin/phpunit --testdox
 
   coverage-check:
-    name: Coverage Check (Minimum 90%)
+    name: Coverage Check (Minimum 80%)
     runs-on: ubuntu-latest
     needs: test
 
@@ -79,11 +79,11 @@ jobs:
             echo round(\$percent, 2);
           ")
           echo "Code coverage: ${COVERAGE}%"
-          if (( $(echo "$COVERAGE < 70" | bc -l) )); then
-            echo "❌ Coverage ${COVERAGE}% is below minimum threshold of 70%"
+          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+            echo "❌ Coverage ${COVERAGE}% is below minimum threshold of 80%"
             exit 1
           else
-            echo "✅ Coverage ${COVERAGE}% meets minimum threshold of 70%"
+            echo "✅ Coverage ${COVERAGE}% meets minimum threshold of 80%"
           fi
 
       - name: Generate coverage badge
