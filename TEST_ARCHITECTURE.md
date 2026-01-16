@@ -5,15 +5,15 @@
 ```
 tests/
 ├── Feature/                    # Tests end-to-end (routes HTTP complètes)
-│   └── ApiRoutesTest.php      # Tous les endpoints
+│   └── ApiRoutesTest.php      # Tous les endpoints (TODO)
 │
 ├── Unit/
 │   ├── Services/              # Tests unitaires des services
-│   │   ├── KelioClientTest.php         ✅ FAIT (16 tests)
-│   │   ├── TimeCalculatorTest.php      ✅ EXISTE (8 tests)
-│   │   ├── AuthTest.php                ⚠️  À REFAIRE
-│   │   ├── StorageTest.php             ⚠️  À REFAIRE
-│   │   └── RateLimiterTest.php         ⚠️  À REFAIRE
+│   │   ├── KelioClientTest.php         ✅ FAIT (16 tests, 50 assertions)
+│   │   ├── TimeCalculatorTest.php      ✅ FAIT (8 tests)
+│   │   ├── AuthTest.php                ✅ FAIT (22 tests, 31 assertions)
+│   │   ├── StorageTest.php             ✅ FAIT (22 tests, 45 assertions)
+│   │   └── RateLimiterTest.php         ✅ FAIT (17 tests, 31 assertions)
 │   │
 │   ├── Middleware/            # Tests des middlewares
 │   │   └── AuthMiddlewareTest.php      ❌ À CRÉER
@@ -104,10 +104,10 @@ Tests existants couvrent bien la logique:
 
 **Recommandation**: Garder tel quel
 
-#### AuthTest ⚠️ À REFAIRE
-Tests existants ont des problèmes (TypeError sur Storage).
+#### AuthTest ✅ FAIT (22 tests, 31 assertions)
+Tests complètement refaits avec DI correct.
 
-**Tests nécessaires:**
+**Tests implémentés:**
 ```php
 Token Generation:
 - Génère un token valide
@@ -131,10 +131,10 @@ Token Invalidation:
 - Invalide les tokens après changement mot de passe
 ```
 
-#### StorageTest ⚠️ À REFAIRE
-Tests existants ont des problèmes (TypeError).
+#### StorageTest ✅ FAIT (22 tests, 45 assertions)
+Tests complètement refaits avec DI correct.
 
-**Tests nécessaires:**
+**Tests implémentés:**
 ```php
 File Operations:
 - Sauvegarde données JSON
@@ -158,10 +158,10 @@ Formatting:
 - Verrouillage fichier (LOCK_EX)
 ```
 
-#### RateLimiterTest ⚠️ À REFAIRE
-Tests existants ont des problèmes (TypeError).
+#### RateLimiterTest ✅ FAIT (17 tests, 31 assertions)
+Tests complètement refaits avec DI correct.
 
-**Tests nécessaires:**
+**Tests implémentés:**
 ```php
 Rate Limiting:
 - Autorise première tentative
@@ -273,13 +273,13 @@ Admin Access:
 ## Priorités d'Implémentation
 
 ### 🔴 Critique (à faire maintenant):
-1. ✅ **KelioClientTest** - FAIT
-2. ⚠️  **AuthTest** - Refaire (bloque les autres)
-3. ⚠️  **StorageTest** - Refaire (bloque les autres)
-4. ❌ **AuthMiddlewareTest** - Crucial pour la sécurité
+1. ✅ **KelioClientTest** - FAIT (16 tests, 50 assertions)
+2. ✅ **AuthTest** - FAIT (22 tests, 31 assertions)
+3. ✅ **StorageTest** - FAIT (22 tests, 45 assertions)
+4. ✅ **RateLimiterTest** - FAIT (17 tests, 31 assertions)
+5. ❌ **AuthMiddlewareTest** - Crucial pour la sécurité (TODO)
 
 ### 🟡 Important (à faire ensuite):
-5. ⚠️  **RateLimiterTest** - Refaire
 6. ❌ **BaseControllerTest** - Logique métier principale
 7. ❌ **DataControllerTest** - Accès admin
 
@@ -318,14 +318,15 @@ tests/Integration/*                → Tests cassés, à recréer si besoin
 
 ## Métriques Actuelles
 
-- **Tests totaux**: ~60
-- **Tests qui passent**: ~35
-- **Tests cassés**: ~25 (TypeError sur DI)
-- **Couverture estimée**: ~60%
+- **Tests totaux**: 97
+- **Tests qui passent**: 97 ✅ (100%)
+- **Tests cassés**: 0 ✅
+- **Assertions**: 202
+- **Couverture estimée**: ~75%
 
 ## Métriques Cibles
 
-- **Tests totaux**: ~80
+- **Tests totaux**: ~110 (avec middleware tests)
 - **Tests qui passent**: 100%
 - **Tests cassés**: 0
 - **Couverture cible**: ~85%
