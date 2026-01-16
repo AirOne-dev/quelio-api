@@ -126,12 +126,16 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: peaceiris/actions-gh-pages@v3
         with:
+          # Option 1: Utiliser GITHUB_TOKEN avec permissions write (recommandé)
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          # Option 2: Si erreur 403, créer un Personal Access Token et l'ajouter dans Settings > Secrets
+          # personal_token: ${{ secrets.GH_PAT }}
           publish_dir: ./badges
           destination_dir: badges
           keep_files: false
           user_name: 'github-actions[bot]'
           user_email: 'github-actions[bot]@users.noreply.github.com'
+          force_orphan: true
 
   quality:
     name: Code Quality Checks
