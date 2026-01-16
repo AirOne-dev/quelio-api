@@ -65,18 +65,30 @@ Pour forcer les tests à passer avant de merger :
    - `quality`
 6. Cliquer sur **Create**
 
-## 6. Résultat Final
+## 6. Activer GitHub Pages (pour les badges dynamiques)
+
+Les badges de couverture et nombre de tests sont générés automatiquement et déployés sur la branche `gh-pages`.
+
+1. Aller sur `https://github.com/YOUR_USERNAME/YOUR_REPO/settings/pages`
+2. Dans **Source**, sélectionner :
+   - Branch : `gh-pages`
+   - Folder : `/ (root)`
+3. Cliquer sur **Save**
+
+**Note** : La branche `gh-pages` sera créée automatiquement lors du premier push sur `main` après que la CI ait réussi.
+
+## 7. Résultat Final
 
 Une fois configuré, vous aurez :
 
 ✅ **CI/CD automatique** à chaque push (100% gratuit)
 ✅ **177 tests** lancés sur 3 versions de PHP (8.1, 8.2, 8.3)
 ✅ **Couverture minimale de 90%** vérifiée
-✅ **Badges** sur le README montrant le statut
+✅ **Badges dynamiques** mis à jour automatiquement (coverage % et nombre de tests)
 ✅ **Protection de la branche main** (tests obligatoires)
 ✅ **Aucun service externe requis** (tout dans GitHub Actions)
 
-## Exemple de Workflow
+## 8. Exemple de Workflow
 
 ```bash
 # 1. Créer une branche
@@ -98,7 +110,7 @@ git push origin feature/nouvelle-fonctionnalite
 # 5. Si tout est vert, merger dans main
 ```
 
-## Aide
+## 9. Aide
 
 **Les tests échouent en CI mais passent en local ?**
 - Vérifier la version de PHP (`php -v`)

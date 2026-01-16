@@ -25,11 +25,11 @@
 
 ### 2. README.md mis à jour
 
-Badges ajoutés :
-- [![Tests](badge)](lien) - Statut de la CI
-- [![Coverage](badge)](lien) - % de couverture
-- [![PHP](badge)](lien) - Versions supportées
-- [![Tests](badge)](lien) - Nombre de tests
+Badges ajoutés (tous dynamiques et mis à jour automatiquement) :
+- [![Tests](badge)](lien) - Statut de la CI (GitHub Actions)
+- [![Coverage](badge)](lien) - % de couverture (généré et déployé sur gh-pages)
+- [![PHP](badge)](lien) - Versions supportées (statique)
+- [![Tests](badge)](lien) - Nombre de tests (généré et déployé sur gh-pages)
 
 Section complète sur les tests et la CI.
 
@@ -56,7 +56,12 @@ git push origin bugfix/noon-minimum-break
    - `YOUR_USERNAME` → votre username GitHub
    - `YOUR_REPO` → nom du repository
 
-2. **Activer Branch Protection** (optionnel mais recommandé) :
+2. **Activer GitHub Pages** (pour les badges dynamiques) :
+   - Settings → Pages
+   - Source : branche `gh-pages`, dossier `/ (root)`
+   - La branche sera créée automatiquement au premier push sur main
+
+3. **Activer Branch Protection** (optionnel mais recommandé) :
    - Settings → Branches → Add rule
    - Cocher "Require status checks to pass before merging"
    - Sélectionner les 5 jobs (test x3 + coverage-check + quality)

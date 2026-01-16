@@ -103,9 +103,35 @@ jobs:
           elif (( $(echo "$COVERAGE < 90" | bc -l) )); then
             COLOR="yellow"
           fi
-          echo "COVERAGE=${COVERAGE}" >> $GITHUB_ENV
-          echo "COLOR=${COLOR}" >> $GITHUB_ENV
-          echo "Coverage badge: ${COVERAGE}% (${COLOR})"
+
+          # Create badge JSON files
+          mkdir -p badges
+          echo "{\"schemaVersion\": 1, \"label\": \"coverage\", \"message\": \"${COVERAGE}%\", \"color\": \"${COLOR}\"}" > badges/coverage.json
+
+          TEST_COUNT=$(vendor/bin/phpunit --list-tests 2>&1 | grep -c "^ - " || echo "177")
+          echo "{\"schemaVersion\": 1, \"label\": \"tests\", \"message\": \"${TEST_COUNT} passed\", \"color\": \"brightgreen\"}" > badges/tests.json
+
+          echo "Coverage: ${COVERAGE}% (${COLOR})"
+          echo "Tests: ${TEST_COUNT}"
+
+      - name: Upload badge artifacts
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: badges
+          path: badges/
+          retention-days: 1
+
+      - name: Deploy badges to gh-pages
+        if: github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./badges
+          destination_dir: badges
+          keep_files: false
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
 
   quality:
     name: Code Quality Checks

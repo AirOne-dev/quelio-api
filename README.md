@@ -1,9 +1,9 @@
 # Quelio API
 
 [![Tests](https://github.com/AirOne-dev/quelio-api/actions/workflows/tests.yml/badge.svg)](https://github.com/AirOne-dev/quelio-api/actions/workflows/tests.yml)
-[![Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen.svg)](https://github.com/AirOne-dev/quelio-api)
+[![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/AirOne-dev/quelio-api/gh-pages/badges/coverage.json)](https://github.com/AirOne-dev/quelio-api)
 [![PHP](https://img.shields.io/badge/PHP-8.1%2B-blue.svg)](https://www.php.net)
-[![Tests](https://img.shields.io/badge/tests-177%20passed-brightgreen.svg)](https://github.com/AirOne-dev/quelio-api)
+[![Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/AirOne-dev/quelio-api/gh-pages/badges/tests.json)](https://github.com/AirOne-dev/quelio-api)
 
 API PHP pour récupérer et calculer les heures de travail depuis Kelio.
 
