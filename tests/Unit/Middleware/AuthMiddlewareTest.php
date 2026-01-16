@@ -398,9 +398,12 @@ class AuthMiddlewareTest extends TestCase
         $_POST['username'] = 'wrong_admin';
         $_POST['password'] = $config['admin_password'];
 
+        ob_start();
         $result = $this->middleware->admin();
+        $output = ob_get_clean();
 
         $this->assertTrue($result); // true = stop execution (failed)
+        $this->assertStringContainsString('error', $output);
     }
 
     public function test_admin_auth_rejects_invalid_password(): void
@@ -409,9 +412,12 @@ class AuthMiddlewareTest extends TestCase
         $_POST['username'] = $config['admin_username'];
         $_POST['password'] = 'wrong_password';
 
+        ob_start();
         $result = $this->middleware->admin();
+        $output = ob_get_clean();
 
         $this->assertTrue($result); // true = stop execution (failed)
+        $this->assertStringContainsString('error', $output);
     }
 
     public function test_admin_auth_accepts_credentials_in_get(): void
@@ -430,9 +436,12 @@ class AuthMiddlewareTest extends TestCase
         $_POST['username'] = '';
         $_POST['password'] = '';
 
+        ob_start();
         $result = $this->middleware->admin();
+        $output = ob_get_clean();
 
         $this->assertTrue($result); // true = stop execution (failed)
+        $this->assertStringContainsString('error', $output);
     }
 
     // ========================================================================

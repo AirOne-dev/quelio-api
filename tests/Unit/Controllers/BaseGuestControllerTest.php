@@ -222,7 +222,7 @@ class BaseGuestControllerTest extends TestCase
         $controller = new BaseGuestController($config);
 
         ob_start();
-        $controller->indexAction();
+        @$controller->indexAction(); // Suppress expected undefined key warning
         $output = ob_get_clean();
 
         // Without the config, it should treat it as false (disabled)
