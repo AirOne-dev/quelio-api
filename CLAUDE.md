@@ -142,17 +142,17 @@ Example:
 ## Testing
 
 - **Framework**: PHPUnit 10.5 via Docker (no local PHP needed)
-- **Coverage**: ~95% code coverage (177 tests, 390 assertions)
+- **Coverage**: > 80% code coverage
 - **Status**: 100% passing, 0 incomplete, 0 warnings, 0 deprecations
 - **Structure**:
-  - Feature Tests: 15 tests - End-to-end router integration
-  - Unit Tests: 162 tests - Services, controllers, middleware
+  - Feature Tests: End-to-end router integration
+  - Unit Tests: Services, controllers, middleware
   - Fixtures: Real HTML from Kelio API (not mocks)
 
 Quick test commands:
 ```bash
-./run-tests.sh              # All tests (177 tests)
-./run-tests.sh --unit       # Unit tests only (162 tests)
+./run-tests.sh              # All tests
+./run-tests.sh --unit       # Unit tests only
 ./run-tests.sh --filter AuthTest  # Specific test
 ./run-tests.sh --coverage   # Generate HTML coverage report
 ```
