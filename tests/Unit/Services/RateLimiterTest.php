@@ -23,6 +23,17 @@ class RateLimiterTest extends TestCase
         $this->rateLimiter = new RateLimiter($this->maxAttempts, $this->windowSeconds);
     }
 
+    protected function tearDown(): void
+    {
+        // Clean up rate limiter data file
+        $dataFile = sys_get_temp_dir() . '/quel_io_rate_limit.json';
+        if (file_exists($dataFile)) {
+            unlink($dataFile);
+        }
+
+        parent::tearDown();
+    }
+
     // ========================================================================
     // BASIC RATE LIMITING
     // ========================================================================

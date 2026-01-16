@@ -37,8 +37,8 @@ tests/
 │   │   ├── IconControllerTest.php        ✅ 6 tests
 │   │   └── ManifestControllerTest.php    ✅ 6 tests
 │   │
-│   └── Middleware/       # Middleware tests (TODO)
-│       └── AuthMiddlewareTest.php
+│   └── Middleware/       # Middleware tests
+│       └── AuthMiddlewareTest.php        ✅ 29 tests, 56 assertions
 │
 ├── Fixtures/             # Real HTML from daryl.kelio.io
 │   └── KelioHtmlFixtures.php
@@ -50,6 +50,8 @@ tests/
 ## Test Categories
 
 ### Services (85 tests, 157 assertions)
+
+All service tests passing ✅
 
 **KelioClientTest** - Kelio API integration with real HTML
 - CSRF token extraction from login page
@@ -99,6 +101,17 @@ tests/
 - Multiple days calculation
 - Deduction limits
 
+### Middleware (29 tests, 56 assertions)
+
+**AuthMiddlewareTest** - Authentication middleware
+- Token-based authentication (POST/GET)
+- Credential-based authentication
+- Rate limiting by IP address
+- AuthContext population
+- Admin authentication
+- Token invalidation on failed auth
+- Edge cases (Unicode, missing REMOTE_ADDR, etc.)
+
 ### Controllers (12 tests)
 
 **IconControllerTest** - Dynamic SVG icon generation
@@ -120,17 +133,17 @@ tests/
 ## Test Metrics
 
 **Current Status:**
-- Total tests: 97
-- Passing: 97 ✅ (100%)
-- Failed: 0
-- Assertions: 202
-- Coverage: ~75%
+- Total tests: 126 ✅
+- Passing: 126 ✅ (100%)
+- Failed: 0 ✅
+- Assertions: 258
+- Coverage: ~80%
 
 **By Category:**
 - Services: 85 tests
+- Middleware: 29 tests
 - Controllers: 12 tests
 - Feature: 0 tests (TODO)
-- Middleware: 0 tests (TODO)
 
 ## Running Tests
 
@@ -391,22 +404,17 @@ Open `coverage/index.html` in your browser to view detailed coverage.
 ## Roadmap
 
 ### Completed ✅
-- KelioClientTest with real HTML fixtures
-- AuthTest with proper encryption tests
-- StorageTest with file operations
-- RateLimiterTest with IP tracking
-- TimeCalculatorTest with break rules
-- IconControllerTest with SVG validation
-- ManifestControllerTest with PWA manifest
+- KelioClientTest with real HTML fixtures (16 tests)
+- AuthTest with proper encryption tests (22 tests)
+- StorageTest with file operations (22 tests)
+- RateLimiterTest with IP tracking (17 tests)
+- TimeCalculatorTest with break rules (8 tests)
+- IconControllerTest with SVG validation (6 tests)
+- ManifestControllerTest with PWA manifest (6 tests)
+- AuthMiddlewareTest with full auth flow (29 tests) ✅
 
 ### TODO ❌
-1. **AuthMiddlewareTest** (High Priority)
-   - Token-based authentication
-   - Credential-based authentication
-   - Rate limiting integration
-   - Admin mode validation
-
-2. **BaseControllerTest** (Medium Priority)
+1. **BaseControllerTest** (Medium Priority)
    - Login flow
    - Hours fetching from Kelio
    - Preference updates

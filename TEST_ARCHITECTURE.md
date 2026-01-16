@@ -16,7 +16,7 @@ tests/
 │   │   └── RateLimiterTest.php         ✅ FAIT (17 tests, 31 assertions)
 │   │
 │   ├── Middleware/            # Tests des middlewares
-│   │   └── AuthMiddlewareTest.php      ❌ À CRÉER
+│   │   └── AuthMiddlewareTest.php      ✅ FAIT (29 tests, 56 assertions)
 │   │
 │   └── Controllers/           # Tests des contrôleurs
 │       ├── IconControllerTest.php      ✅ EXISTE (6 tests)
@@ -179,8 +179,10 @@ Window Management:
 
 ### 3. Unit Tests - Middleware
 
-#### AuthMiddlewareTest ❌ À CRÉER
-**Tests nécessaires:**
+#### AuthMiddlewareTest ✅ FAIT (29 tests, 56 assertions)
+Tests complets du middleware d'authentification.
+
+**Tests implémentés:**
 ```php
 Token-based Auth:
 - Authentifie avec token valide
@@ -272,12 +274,12 @@ Admin Access:
 
 ## Priorités d'Implémentation
 
-### 🔴 Critique (à faire maintenant):
+### 🔴 Critique (TOUS FAITS ✅):
 1. ✅ **KelioClientTest** - FAIT (16 tests, 50 assertions)
 2. ✅ **AuthTest** - FAIT (22 tests, 31 assertions)
 3. ✅ **StorageTest** - FAIT (22 tests, 45 assertions)
 4. ✅ **RateLimiterTest** - FAIT (17 tests, 31 assertions)
-5. ❌ **AuthMiddlewareTest** - Crucial pour la sécurité (TODO)
+5. ✅ **AuthMiddlewareTest** - FAIT (29 tests, 56 assertions)
 
 ### 🟡 Important (à faire ensuite):
 6. ❌ **BaseControllerTest** - Logique métier principale
@@ -318,15 +320,15 @@ tests/Integration/*                → Tests cassés, à recréer si besoin
 
 ## Métriques Actuelles
 
-- **Tests totaux**: 97
-- **Tests qui passent**: 97 ✅ (100%)
+- **Tests totaux**: 126 ✅
+- **Tests qui passent**: 126 ✅ (100%)
 - **Tests cassés**: 0 ✅
-- **Assertions**: 202
-- **Couverture estimée**: ~75%
+- **Assertions**: 258
+- **Couverture estimée**: ~80%
 
 ## Métriques Cibles
 
-- **Tests totaux**: ~110 (avec middleware tests)
+- **Tests totaux**: ~140 (avec controller tests)
 - **Tests qui passent**: 100%
 - **Tests cassés**: 0
 - **Couverture cible**: ~85%
