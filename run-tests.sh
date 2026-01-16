@@ -78,12 +78,23 @@ echo ""
 echo -e "${YELLOW}Running tests...${NC}"
 echo ""
 
-# Run PHPUnit
-docker run --rm \
-    -v "$(pwd):/app" \
-    -w /app \
-    php:8.2-cli \
-    ./vendor/bin/phpunit --testdox $PHPUNIT_ARGS
+# Detect if coverage is needed
+if [[ "$PHPUNIT_ARGS" == *"--coverage"* ]]; then
+    # Use PHP image with Xdebug for coverage
+    docker run --rm \
+        -v "$(pwd):/app" \
+        -w /app \
+        -e XDEBUG_MODE=coverage \
+        php:8.2-cli-alpine \
+        sh -c "apk add --no-cache linux-headers \$PHPIZE_DEPS && pecl install xdebug && docker-php-ext-enable xdebug && ./vendor/bin/phpunit --testdox $PHPUNIT_ARGS"
+else
+    # Use regular PHP image without coverage
+    docker run --rm \
+        -v "$(pwd):/app" \
+        -w /app \
+        php:8.2-cli \
+        ./vendor/bin/phpunit --testdox $PHPUNIT_ARGS
+fi
 
 TEST_EXIT_CODE=$?
 

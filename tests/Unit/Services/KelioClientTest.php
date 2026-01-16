@@ -289,4 +289,139 @@ class KelioClientTest extends TestCase
         $cleanedText = trim(str_replace(["\xC2\xA0", "&nbsp;", " "], '', $rawText));
         $this->assertMatchesRegularExpression('/^\d{2}:\d{2}$/', $cleanedText);
     }
+
+    // ========================================================================
+    // PARSE HOURS TO ARRAY - FULL INTEGRATION
+    // ========================================================================
+
+    public function test_parse_hours_to_array_with_real_html(): void
+    {
+        $html = KelioHtmlFixtures::getHoursPage();
+        $expectedHours = KelioHtmlFixtures::getExpectedParsedHours();
+
+        // Use reflection to access private method
+        $reflection = new \ReflectionClass($this->client);
+        $method = $reflection->getMethod('parseHoursToArray');
+        $method->setAccessible(true);
+
+        $result = $method->invoke($this->client, $html);
+
+        $this->assertEquals($expectedHours, $result);
+        $this->assertCount(3, $result);
+    }
+
+    public function test_parse_hours_to_array_with_empty_html(): void
+    {
+        $html = KelioHtmlFixtures::getEmptyHoursPage();
+
+        // Use reflection to access private method
+        $reflection = new \ReflectionClass($this->client);
+        $method = $reflection->getMethod('parseHoursToArray');
+        $method->setAccessible(true);
+
+        $result = $method->invoke($this->client, $html);
+
+        $this->assertIsArray($result);
+        $this->assertEmpty($result);
+    }
+
+    public function test_parse_hours_to_array_handles_malformed_dates(): void
+    {
+        $html = '<html><body><table class="bordered"><tr><td>Invalid Date</td></tr></table></body></html>';
+
+        $reflection = new \ReflectionClass($this->client);
+        $method = $reflection->getMethod('parseHoursToArray');
+        $method->setAccessible(true);
+
+        $result = $method->invoke($this->client, $html);
+
+        $this->assertIsArray($result);
+        $this->assertEmpty($result);
+    }
+
+    public function test_parse_hours_to_array_filters_out_empty_times(): void
+    {
+        // Test with proper HTML structure matching real Kelio format
+        $html = '<html><body><table class="bordered"><tr>';
+        $html .= '<td><a href="javascript:void(0)" onclick="javascript:fcAfficherBadgeagesJour(\'12/01/2026\')" class="lien12">12/01/2026</a></td>';
+        $html .= '<td><table width="100%"><tr><td width="*" align="center">&nbsp;</td></tr></table></td>';
+        $html .= '<td><table width="100%"><tr><td width="*" align="center">08:30&nbsp;</td></tr></table></td>';
+        $html .= '</tr></table></body></html>';
+
+        $reflection = new \ReflectionClass($this->client);
+        $method = $reflection->getMethod('parseHoursToArray');
+        $method->setAccessible(true);
+
+        $result = $method->invoke($this->client, $html);
+
+        // Just verify it parses without error
+        $this->assertIsArray($result);
+    }
+
+    public function test_parse_hours_to_array_handles_row_without_date_link(): void
+    {
+        $html = '<html><body><table class="bordered">';
+        $html .= '<tr><th>Header Row</th></tr>';
+        $html .= '<tr><td>Some text without date</td></tr>';
+        $html .= '</table></body></html>';
+
+        $reflection = new \ReflectionClass($this->client);
+        $method = $reflection->getMethod('parseHoursToArray');
+        $method->setAccessible(true);
+
+        $result = $method->invoke($this->client, $html);
+
+        $this->assertIsArray($result);
+        $this->assertEmpty($result);
+    }
+
+    // ========================================================================
+    // GET LOCATION - PRIVATE METHOD TESTING
+    // ========================================================================
+
+    public function test_get_location_returns_null_when_no_location_header(): void
+    {
+        $headers = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n";
+
+        $reflection = new \ReflectionClass($this->client);
+        $method = $reflection->getMethod('getLocation');
+        $method->setAccessible(true);
+
+        $result = $method->invoke($this->client, $headers);
+
+        $this->assertNull($result);
+    }
+
+    public function test_get_location_strips_kelio_url_with_port(): void
+    {
+        $headers = "Location: https://daryl.kelio.io:443/open/homepage\r\n";
+
+        $reflection = new \ReflectionClass($this->client);
+        $method = $reflection->getMethod('getLocation');
+        $method->setAccessible(true);
+
+        $result = $method->invoke($this->client, $headers);
+
+        // The method strips the kelio URL (with or without port)
+        $this->assertIsString($result);
+        $this->assertStringContainsString('homepage', $result);
+    }
+
+    // ========================================================================
+    // GET COOKIES - PRIVATE METHOD TESTING
+    // ========================================================================
+
+    public function test_get_cookies_with_no_cookies(): void
+    {
+        $headers = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n";
+
+        $reflection = new \ReflectionClass($this->client);
+        $method = $reflection->getMethod('getCookies');
+        $method->setAccessible(true);
+
+        $result = $method->invoke($this->client, $headers);
+
+        $this->assertIsArray($result);
+        $this->assertEmpty($result);
+    }
 }

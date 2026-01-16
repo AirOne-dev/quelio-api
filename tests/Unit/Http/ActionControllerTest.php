@@ -93,6 +93,27 @@ class ActionControllerTest extends TestCase
         $this->assertEquals('refreshAction', $this->controller->lastCalledMethod);
     }
 
+    public function testHandleUnknownActionReturnsErrorResponse(): void
+    {
+        // Create a controller with the default handleUnknownAction implementation
+        $controller = new class extends \ActionController {
+            public function indexAction(): void {
+                // Empty
+            }
+        };
+
+        $_POST['action'] = 'non_existent_action';
+
+        ob_start();
+        $controller->dispatch();
+        $output = ob_get_clean();
+
+        $response = json_decode($output, true);
+
+        $this->assertArrayHasKey('error', $response);
+        $this->assertStringContainsString('Unknown action', $response['error']);
+    }
+
 }
 
 /**

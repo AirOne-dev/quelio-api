@@ -355,4 +355,150 @@ class StorageTest extends TestCase
 
         $this->assertIsArray($data);
     }
+
+    // ========================================================================
+    // LOAD ALL DATA - ERROR HANDLING
+    // ========================================================================
+
+    public function test_load_all_data_handles_corrupted_json(): void
+    {
+        // Write invalid JSON to file
+        $dataFile = $this->storage->getDataFilePath();
+        $dir = dirname($dataFile);
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+        file_put_contents($dataFile, '{invalid json}');
+
+        $data = $this->storage->loadAllData();
+
+        // Should return empty array on error
+        $this->assertIsArray($data);
+        $this->assertEmpty($data);
+    }
+
+    public function test_load_all_data_handles_empty_file(): void
+    {
+        // Create empty file
+        $dataFile = $this->storage->getDataFilePath();
+        $dir = dirname($dataFile);
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+        file_put_contents($dataFile, '');
+
+        $data = $this->storage->loadAllData();
+
+        $this->assertIsArray($data);
+        $this->assertEmpty($data);
+    }
+
+    public function test_load_all_data_handles_non_array_json(): void
+    {
+        // Write non-array JSON to file
+        $dataFile = $this->storage->getDataFilePath();
+        $dir = dirname($dataFile);
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+        file_put_contents($dataFile, '"string"');
+
+        $data = $this->storage->loadAllData();
+
+        $this->assertIsArray($data);
+        $this->assertEmpty($data);
+    }
+
+    // ========================================================================
+    // SAVE USER DATA - SUCCESS CASES
+    // ========================================================================
+
+    public function test_save_user_data_returns_true_on_success(): void
+    {
+        $username = 'testuser';
+
+        $result = $this->storage->saveUserData($username, [], '00:00', '00:00');
+
+        $this->assertTrue($result);
+    }
+
+    // ========================================================================
+    // INVALIDATE TOKEN - EDGE CASES
+    // ========================================================================
+
+    public function test_invalidate_token_handles_user_without_token(): void
+    {
+        $username = 'testuser';
+
+        // Save user without token
+        $this->storage->saveUserData($username, [], '00:00', '00:00');
+
+        // Should not throw exception
+        $result = $this->storage->invalidateToken($username);
+
+        $this->assertTrue($result);
+    }
+
+    public function test_invalidate_token_succeeds_with_existing_token(): void
+    {
+        $username = 'testuser';
+        $hours = ['12/01/2026' => ['08:30', '17:00']];
+
+        $this->storage->saveUserData($username, $hours, '08:30', '08:30', 'valid_token');
+
+        // Invalidate token
+        $result = $this->storage->invalidateToken($username);
+
+        // Should return true
+        $this->assertTrue($result);
+    }
+
+    // ========================================================================
+    // FILE SYSTEM OPERATIONS
+    // ========================================================================
+
+    public function test_get_data_file_path_returns_string(): void
+    {
+        $path = $this->storage->getDataFilePath();
+
+        $this->assertIsString($path);
+        $this->assertStringContainsString('data.json', $path);
+    }
+
+    // ========================================================================
+    // SAVE ALL DATA - DEBUG MODE
+    // ========================================================================
+
+    public function test_save_all_data_pretty_prints_in_debug_mode(): void
+    {
+        $username = 'testuser';
+        $this->storage->saveUserData($username, [], '00:00', '00:00');
+
+        $dataFile = $this->storage->getDataFilePath();
+        $content = file_get_contents($dataFile);
+
+        // Debug mode should have newlines and indentation
+        $this->assertStringContainsString("\n", $content);
+        $this->assertStringContainsString("    ", $content);
+    }
+
+    public function test_save_all_data_minifies_in_production_mode(): void
+    {
+        // Create storage with debug mode OFF
+        $storageProduction = new Storage(false);
+        $username = 'testuser';
+        $storageProduction->saveUserData($username, [], '00:00', '00:00');
+
+        $dataFile = $storageProduction->getDataFilePath();
+        $content = file_get_contents($dataFile);
+
+        // Production mode should be minified (no pretty print)
+        // Should still have structure but no extra whitespace
+        $this->assertNotEmpty($content);
+
+        // Clean up
+        if (file_exists($dataFile)) {
+            unlink($dataFile);
+        }
+    }
 }

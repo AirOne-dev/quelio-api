@@ -397,4 +397,191 @@ class BaseControllerTest extends TestCase
         $this->assertEquals('ocean', $response['preferences']['theme']);
         $this->assertEquals(420, $response['preferences']['minutes_objective']);
     }
+
+    // ========================================================================
+    // LOGIN ACTION - FETCH FRESH DATA
+    // ========================================================================
+
+    public function test_login_action_calls_fetch_fresh_data(): void
+    {
+        $username = 'testuser';
+        $password = 'testpass';
+        $jsessionid = 'TEST_SESSION_123';
+
+        // Setup authenticated context (simulates middleware already authenticated)
+        $this->authContext->setCredentialsAuth($username, $password, $jsessionid);
+
+        // Mock KelioClient to return test data
+        $mockClient = $this->createMock(KelioClient::class);
+        $mockClient->expects($this->once())
+            ->method('fetchAllHours')
+            ->with($jsessionid)
+            ->willReturn([
+                ['12/01/2026' => ['08:30', '12:00']],
+                ['12/01/2026' => ['13:00', '17:30']],
+                []
+            ]);
+
+        // Create controller with mocked client
+        $controller = new BaseController(
+            $this->storage,
+            $this->auth,
+            $mockClient,
+            $this->timeCalculator,
+            $this->authContext,
+            $this->getConfig()
+        );
+
+        ob_start();
+        $controller->loginAction();
+        $output = ob_get_clean();
+
+        $response = json_decode($output, true);
+
+        $this->assertNotNull($response);
+        $this->assertIsArray($response);
+        $this->assertArrayHasKey('hours', $response);
+        $this->assertArrayHasKey('total_effective', $response);
+        $this->assertArrayHasKey('total_paid', $response);
+    }
+
+    public function test_fetch_fresh_data_handles_missing_jsessionid(): void
+    {
+        $username = 'testuser';
+        $password = 'testpass';
+
+        // Create a mock AuthContext that returns null for jsessionid
+        $mockAuthContext = $this->createMock(AuthContext::class);
+        $mockAuthContext->method('getUsername')->willReturn($username);
+        $mockAuthContext->method('getPassword')->willReturn($password);
+        $mockAuthContext->method('getJSessionId')->willReturn(null);
+        $mockAuthContext->method('getOrGenerateToken')->willReturn('test_token');
+
+        $controller = new BaseController(
+            $this->storage,
+            $this->auth,
+            $this->kelioClient,
+            $this->timeCalculator,
+            $mockAuthContext,
+            $this->getConfig()
+        );
+
+        ob_start();
+        $controller->loginAction();
+        $output = ob_get_clean();
+
+        $response = json_decode($output, true);
+
+        $this->assertArrayHasKey('error', $response);
+        $this->assertStringContainsString('Failed to fetch data from Kelio', $response['error']);
+        $this->assertTrue($response['token_invalidated'] ?? false);
+    }
+
+    public function test_fetch_fresh_data_handles_kelio_client_exception(): void
+    {
+        $username = 'testuser';
+        $password = 'testpass';
+        $jsessionid = 'TEST_SESSION_123';
+
+        $this->authContext->setCredentialsAuth($username, $password, $jsessionid);
+
+        // Mock KelioClient to throw exception
+        $mockClient = $this->createMock(KelioClient::class);
+        $mockClient->expects($this->once())
+            ->method('fetchAllHours')
+            ->with($jsessionid)
+            ->willThrowException(new \Exception('Kelio API error'));
+
+        $controller = new BaseController(
+            $this->storage,
+            $this->auth,
+            $mockClient,
+            $this->timeCalculator,
+            $this->authContext,
+            $this->getConfig()
+        );
+
+        ob_start();
+        $controller->loginAction();
+        $output = ob_get_clean();
+
+        $response = json_decode($output, true);
+
+        $this->assertArrayHasKey('error', $response);
+        $this->assertStringContainsString('Failed to fetch data from Kelio', $response['error']);
+        $this->assertTrue($response['token_invalidated'] ?? false);
+    }
+
+    public function test_fetch_fresh_data_saves_user_data_on_success(): void
+    {
+        $username = 'testuser';
+        $password = 'testpass';
+        $jsessionid = 'TEST_SESSION_123';
+
+        $this->authContext->setCredentialsAuth($username, $password, $jsessionid);
+
+        // Mock KelioClient
+        $mockClient = $this->createMock(KelioClient::class);
+        $mockClient->expects($this->once())
+            ->method('fetchAllHours')
+            ->willReturn([
+                ['12/01/2026' => ['08:30', '12:00']],
+                ['12/01/2026' => ['13:00', '17:30']],
+                []
+            ]);
+
+        $controller = new BaseController(
+            $this->storage,
+            $this->auth,
+            $mockClient,
+            $this->timeCalculator,
+            $this->authContext,
+            $this->getConfig()
+        );
+
+        ob_start();
+        $controller->loginAction();
+        ob_end_clean();
+
+        // Verify data was saved
+        $userData = $this->storage->getUserData($username);
+        $this->assertNotNull($userData);
+        $this->assertArrayHasKey('hours', $userData);
+        $this->assertArrayHasKey('total_effective', $userData);
+        $this->assertArrayHasKey('total_paid', $userData);
+    }
+
+    public function test_fetch_fresh_data_invalidates_token_on_error(): void
+    {
+        $username = 'testuser';
+        $password = 'testpass';
+        $jsessionid = 'TEST_SESSION_123';
+
+        $this->authContext->setCredentialsAuth($username, $password, $jsessionid);
+
+        // Mock KelioClient to throw exception
+        $mockClient = $this->createMock(KelioClient::class);
+        $mockClient->expects($this->once())
+            ->method('fetchAllHours')
+            ->willThrowException(new \Exception('Kelio API error'));
+
+        $controller = new BaseController(
+            $this->storage,
+            $this->auth,
+            $mockClient,
+            $this->timeCalculator,
+            $this->authContext,
+            $this->getConfig()
+        );
+
+        ob_start();
+        $controller->loginAction();
+        $output = ob_get_clean();
+
+        // Verify error response
+        $response = json_decode($output, true);
+        $this->assertArrayHasKey('error', $response);
+        $this->assertStringContainsString('Failed to fetch data from Kelio', $response['error']);
+        $this->assertTrue($response['token_invalidated'] ?? false);
+    }
 }
