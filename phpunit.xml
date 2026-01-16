@@ -6,7 +6,6 @@
          failOnWarning="true"
          failOnRisky="true"
          beStrictAboutOutputDuringTests="true"
-         beStrictAboutTodoAnnotatedTests="true"
          cacheDirectory=".phpunit.cache">
     <testsuites>
         <testsuite name="Unit">

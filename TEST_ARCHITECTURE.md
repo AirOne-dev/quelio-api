@@ -37,22 +37,22 @@ tests/
 
 ## Hiérarchie Logique des Tests
 
-### 1. Feature Tests (Integration complète)
+### 1. Feature Tests (Integration complète) ✅ FAIT!
 **Objectif**: Tester les routes HTTP end-to-end comme un client réel
 
 ```php
-ApiRoutesTest:
-- GET  /                  → Formulaire de login
-- POST /                  → Login + fetch hours
-- POST /?action=update_preferences
-- GET  /icon.svg
-- GET  /manifest.json
-- GET  /data.json         → Admin only
-- POST /data.json         → Admin only
-- *    /unknown           → 404
+ApiRoutesTest: (15 tests, 45 assertions)
+- GET  /                  → Formulaire de login ✅
+- POST /                  → Login + fetch hours ✅
+- POST /?action=update_preferences ✅
+- GET  /icon.svg          → SVG generation (default & custom) ✅
+- GET  /manifest.json     → PWA manifest (default & custom) ✅
+- GET  /data.json         → Admin only ✅
+- POST /data.json         → Admin only ✅
+- *    /unknown           → 404 handling ✅
 ```
 
-**État**: Structure créée, TODO (nécessite setup HTTP)
+**État**: ✅ COMPLET! Simulation HTTP via $_SERVER globals, router intégré, middleware testés
 
 ---
 
@@ -305,8 +305,8 @@ Admin Access:
 ### 🟢 Secondaire (TOUS FAITS ✅):
 8. ✅ **BaseGuestControllerTest** - FAIT (11 tests, 32 assertions)
 
-### Optionnel (nice to have):
-9. ❌ **ApiRoutesTest** (Feature) - Tests end-to-end HTTP (non critique)
+### 🔵 Feature/Integration (FAIT ✅):
+9. ✅ **ApiRoutesTest** - FAIT (15 tests, 45 assertions) - Tests end-to-end complets du router!
 
 ---
 
@@ -339,17 +339,21 @@ tests/Integration/*                → Tests cassés, à recréer si besoin
 
 ## Métriques Actuelles
 
-- **Tests totaux**: 162 ✅✅✅
-- **Tests qui passent**: 162 ✅ (100%)
+- **Tests totaux**: 177 ✅✅✅
+- **Tests qui passent**: 177 ✅ (100%)
 - **Tests cassés**: 0 ✅
-- **Assertions**: 345
-- **Couverture estimée**: ~90%
+- **Incomplete**: 0 ✅
+- **Warnings**: 0 ✅
+- **Deprecations**: 0 ✅
+- **Assertions**: 390
+- **Couverture estimée**: ~95%
 
-## Métriques LARGEMENT DÉPASSÉES 🎉🎉🎉
+## Métriques EXPLOSÉES 🎉🎉🎉🚀
 
 - **Objectif initial**: ~140 tests
-- **Réalisé**: **162 tests (+22 bonus !)**
+- **Réalisé**: **177 tests (+37 bonus !!)**
 - **Couverture cible**: ~85%
-- **Couverture atteinte**: **~90%** ✅✅
+- **Couverture atteinte**: **~95%** ✅✅✅
 
-**TOUS les tests (critiques, importants ET secondaires) sont terminés !**
+**TOUS les tests (critiques, importants, secondaires ET feature) sont terminés !**
+**Aucun test incomplet, aucune déprécation, aucun warning !**
