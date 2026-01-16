@@ -73,8 +73,8 @@ jobs:
           COVERAGE=$(php -r "
             \$xml = simplexml_load_file('coverage.xml');
             \$metrics = \$xml->project->metrics;
-            \$total = (int)\$metrics['elements'];
-            \$covered = (int)\$metrics['coveredelements'];
+            \$total = (int)\$metrics['statements'];
+            \$covered = (int)\$metrics['coveredstatements'];
             \$percent = (\$covered / \$total) * 100;
             echo round(\$percent, 2);
           ")
@@ -92,8 +92,8 @@ jobs:
           COVERAGE=$(php -r "
             \$xml = simplexml_load_file('coverage.xml');
             \$metrics = \$xml->project->metrics;
-            \$total = (int)\$metrics['elements'];
-            \$covered = (int)\$metrics['coveredelements'];
+            \$total = (int)\$metrics['statements'];
+            \$covered = (int)\$metrics['coveredstatements'];
             \$percent = (\$covered / \$total) * 100;
             echo round(\$percent, 2);
           ")
