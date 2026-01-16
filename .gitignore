@@ -30,4 +30,6 @@ temp/
 
 # OS files
 .DS_Store
-Thumbs.db
+Thumbs.db.gitignore
+composer.phar
+coverage.xml

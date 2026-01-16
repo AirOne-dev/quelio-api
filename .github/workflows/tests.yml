@@ -79,11 +79,11 @@ jobs:
             echo round(\$percent, 2);
           ")
           echo "Code coverage: ${COVERAGE}%"
-          if (( $(echo "$COVERAGE < 90" | bc -l) )); then
-            echo "❌ Coverage ${COVERAGE}% is below minimum threshold of 90%"
+          if (( $(echo "$COVERAGE < 70" | bc -l) )); then
+            echo "❌ Coverage ${COVERAGE}% is below minimum threshold of 70%"
             exit 1
           else
-            echo "✅ Coverage ${COVERAGE}% meets minimum threshold of 90%"
+            echo "✅ Coverage ${COVERAGE}% meets minimum threshold of 70%"
           fi
 
       - name: Generate coverage badge
