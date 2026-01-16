@@ -79,10 +79,10 @@ class IconControllerTest extends TestCase
         });
 
         $this->assertStringContainsString('linearGradient', $output);
-        $this->assertStringContainsString('id="iconGradient"', $output);
+        $this->assertStringContainsString('id="paint0_linear_126_88"', $output);
     }
 
-    public function test_svg_contains_clock_icon(): void
+    public function test_svg_contains_clock_icon_design(): void
     {
         $_GET = [];
 
@@ -90,8 +90,39 @@ class IconControllerTest extends TestCase
             $this->controller->indexAction();
         });
 
+        // New icon design contains circle and path elements
         $this->assertStringContainsString('<circle', $output);
-        $this->assertStringContainsString('<line', $output);
+        $this->assertStringContainsString('<path', $output);
+        $this->assertStringContainsString('<mask', $output);
+    }
+
+    public function test_svg_has_correct_dimensions(): void
+    {
+        $_GET = [];
+
+        $output = $this->captureOutput(function () {
+            $this->controller->indexAction();
+        });
+
+        // Check SVG dimensions
+        $this->assertStringContainsString('width="581"', $output);
+        $this->assertStringContainsString('height="580"', $output);
+        $this->assertStringContainsString('viewBox="0 0 581 580"', $output);
+    }
+
+    public function test_svg_has_filters_and_effects(): void
+    {
+        $_GET = [];
+
+        $output = $this->captureOutput(function () {
+            $this->controller->indexAction();
+        });
+
+        // Check for drop shadow filters
+        $this->assertStringContainsString('<filter', $output);
+        $this->assertStringContainsString('feGaussianBlur', $output);
+        $this->assertStringContainsString('feBlend', $output);
+        $this->assertStringContainsString('effect1_dropShadow_126_88', $output, 'Should contain drop shadow effect');
     }
 
     protected function tearDown(): void
