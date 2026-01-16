@@ -35,40 +35,7 @@ Par exemple :
 [![Tests](https://github.com/erwanmarchand/quelio-api/actions/workflows/tests.yml/badge.svg)](https://github.com/erwanmarchand/quelio-api/actions/workflows/tests.yml)
 ```
 
-## 4. Configurer Codecov (Optionnel)
-
-### 4.1 Créer un compte Codecov
-
-1. Aller sur https://codecov.io
-2. Se connecter avec GitHub
-3. Autoriser l'accès au repository
-
-### 4.2 Obtenir le token Codecov
-
-1. Aller sur https://app.codecov.io/gh/YOUR_USERNAME/YOUR_REPO/settings
-2. Copier le **Upload Token**
-
-### 4.3 Ajouter le token aux secrets GitHub
-
-1. Aller sur `https://github.com/YOUR_USERNAME/YOUR_REPO/settings/secrets/actions`
-2. Cliquer sur **New repository secret**
-3. Nom : `CODECOV_TOKEN`
-4. Valeur : Coller le token Codecov
-5. Cliquer sur **Add secret**
-
-### 4.4 Mettre à jour le badge Coverage
-
-Dans `README.md`, remplacer :
-```markdown
-[![Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen.svg)](https://github.com/YOUR_USERNAME/YOUR_REPO)
-```
-
-Par :
-```markdown
-[![codecov](https://codecov.io/gh/YOUR_USERNAME/YOUR_REPO/branch/main/graph/badge.svg)](https://codecov.io/gh/YOUR_USERNAME/YOUR_REPO)
-```
-
-## 5. Vérifier que la CI Fonctionne
+## 4. Vérifier que la CI Fonctionne
 
 1. Aller sur `https://github.com/YOUR_USERNAME/YOUR_REPO/actions`
 2. Vous devriez voir le workflow **Tests** en cours d'exécution
@@ -80,7 +47,7 @@ Par :
 2. **coverage-check** : Vérifie que la couverture est ≥ 90%
 3. **quality** : Vérifie qu'il n'y a pas de tests incomplete/risky/warnings
 
-## 6. Configuration Branch Protection (Recommandé)
+## 5. Configuration Branch Protection (Recommandé)
 
 Pour forcer les tests à passer avant de merger :
 
@@ -99,16 +66,16 @@ Pour forcer les tests à passer avant de merger :
    - `quality`
 6. Cliquer sur **Create**
 
-## 7. Résultat Final
+## 6. Résultat Final
 
 Une fois configuré, vous aurez :
 
-✅ **CI/CD automatique** à chaque push
+✅ **CI/CD automatique** à chaque push (100% gratuit)
 ✅ **177 tests** lancés sur 4 versions de PHP
 ✅ **Couverture minimale de 90%** vérifiée
 ✅ **Badges** sur le README montrant le statut
 ✅ **Protection de la branche main** (tests obligatoires)
-✅ **Rapports de couverture** sur Codecov
+✅ **Aucun service externe requis** (tout dans GitHub Actions)
 
 ## Exemple de Workflow
 
@@ -127,7 +94,7 @@ git push origin feature/nouvelle-fonctionnalite
 # 4. Créer une Pull Request sur GitHub
 # → La CI lance automatiquement les tests
 # → Les badges montrent le statut (✅ ou ❌)
-# → Codecov commente avec le diff de coverage
+# → Les checks doivent être verts pour merger
 
 # 5. Si tout est vert, merger dans main
 ```
@@ -144,6 +111,6 @@ git push origin feature/nouvelle-fonctionnalite
 - Vérifier que le chemin vers le workflow est correct
 - Essayer de vider le cache du navigateur
 
-**Codecov ne reçoit pas les rapports ?**
-- Vérifier que `CODECOV_TOKEN` est bien configuré dans les secrets
-- Vérifier les logs du job de coverage dans Actions
+**Le coverage n'est pas calculé ?**
+- Vérifier que Xdebug est bien installé (automatique dans la CI)
+- Vérifier les logs du job `coverage-check` dans Actions
