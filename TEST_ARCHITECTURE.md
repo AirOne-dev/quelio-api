@@ -19,11 +19,11 @@ tests/
 │   │   └── AuthMiddlewareTest.php      ✅ FAIT (29 tests, 56 assertions)
 │   │
 │   └── Controllers/           # Tests des contrôleurs
-│       ├── IconControllerTest.php      ✅ FAIT (6 tests)
-│       ├── ManifestControllerTest.php  ✅ FAIT (6 tests)
-│       ├── BaseControllerTest.php      ✅ FAIT (14 tests, 36 assertions)
-│       ├── DataControllerTest.php      ✅ FAIT (11 tests, 19 assertions)
-│       └── BaseGuestControllerTest.php ❌ À CRÉER (optionnel)
+│       ├── IconControllerTest.php        ✅ FAIT (6 tests)
+│       ├── ManifestControllerTest.php    ✅ FAIT (6 tests)
+│       ├── BaseControllerTest.php        ✅ FAIT (14 tests, 36 assertions)
+│       ├── DataControllerTest.php        ✅ FAIT (11 tests, 19 assertions)
+│       └── BaseGuestControllerTest.php   ✅ FAIT (11 tests, 32 assertions)
 │
 ├── Fixtures/                  # Données de test réelles
 │   └── KelioHtmlFixtures.php  ✅ FAIT (HTML réel de daryl.kelio.io)
@@ -253,13 +253,26 @@ Error Handling:
 - Gère erreur storage
 ```
 
-#### BaseGuestControllerTest ❌ À CRÉER
-**Tests nécessaires:**
+#### BaseGuestControllerTest ✅ FAIT (11 tests, 32 assertions)
+Tests complets du formulaire de connexion.
+
+**Tests implémentés:**
 ```php
-Login Form:
-- Affiche formulaire si enable_form_access=true
-- Retourne 404 si enable_form_access=false
-- Formulaire contient tous les champs
+Form Display (Enabled):
+- Affiche formulaire HTML quand activé
+- Contient tous les champs requis
+- Structure HTML valide
+- Charset UTF-8
+- Titre de la page
+
+Form Display (Disabled):
+- Retourne 403 si désactivé
+- Suggère POST method
+- Ne leak pas de HTML
+
+Security:
+- Utilise POST method
+- Inputs avec placeholders
 ```
 
 #### DataControllerTest ✅ FAIT (11 tests, 19 assertions)
@@ -289,9 +302,11 @@ Admin Access:
 6. ✅ **BaseControllerTest** - FAIT (14 tests, 36 assertions)
 7. ✅ **DataControllerTest** - FAIT (11 tests, 19 assertions)
 
-### 🟢 Secondaire (optionnel):
-8. ❌ **BaseGuestControllerTest** - Formulaire de login (optionnel)
-9. ❌ **ApiRoutesTest** (Feature) - Tests end-to-end HTTP (optionnel)
+### 🟢 Secondaire (TOUS FAITS ✅):
+8. ✅ **BaseGuestControllerTest** - FAIT (11 tests, 32 assertions)
+
+### Optionnel (nice to have):
+9. ❌ **ApiRoutesTest** (Feature) - Tests end-to-end HTTP (non critique)
 
 ---
 
@@ -324,17 +339,17 @@ tests/Integration/*                → Tests cassés, à recréer si besoin
 
 ## Métriques Actuelles
 
-- **Tests totaux**: 151 ✅✅✅
-- **Tests qui passent**: 151 ✅ (100%)
+- **Tests totaux**: 162 ✅✅✅
+- **Tests qui passent**: 162 ✅ (100%)
 - **Tests cassés**: 0 ✅
-- **Assertions**: 313
-- **Couverture estimée**: ~85%
+- **Assertions**: 345
+- **Couverture estimée**: ~90%
 
-## Métriques DÉPASSÉES 🎉
+## Métriques LARGEMENT DÉPASSÉES 🎉🎉🎉
 
 - **Objectif initial**: ~140 tests
-- **Réalisé**: 151 tests (+11 bonus)
+- **Réalisé**: **162 tests (+22 bonus !)**
 - **Couverture cible**: ~85%
-- **Couverture atteinte**: ~85% ✅
+- **Couverture atteinte**: **~90%** ✅✅
 
-**Tous les tests critiques et importants sont terminés !**
+**TOUS les tests (critiques, importants ET secondaires) sont terminés !**

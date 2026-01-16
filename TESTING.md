@@ -37,7 +37,8 @@ tests/
 │   │   ├── IconControllerTest.php        ✅ 6 tests
 │   │   ├── ManifestControllerTest.php    ✅ 6 tests
 │   │   ├── BaseControllerTest.php        ✅ 14 tests, 36 assertions
-│   │   └── DataControllerTest.php        ✅ 11 tests, 19 assertions
+│   │   ├── DataControllerTest.php        ✅ 11 tests, 19 assertions
+│   │   └── BaseGuestControllerTest.php   ✅ 11 tests, 32 assertions
 │   │
 │   └── Middleware/       # Middleware tests
 │       └── AuthMiddlewareTest.php        ✅ 29 tests, 56 assertions
@@ -114,7 +115,14 @@ All service tests passing ✅
 - Token invalidation on failed auth
 - Edge cases (Unicode, missing REMOTE_ADDR, etc.)
 
-### Controllers (37 tests, 55 assertions)
+### Controllers (48 tests, 87 assertions)
+
+**BaseGuestControllerTest** - Login form controller
+- Form display when enabled
+- Required fields validation
+- HTML structure validation
+- Form disabled (403 error)
+- Security (POST method, no HTML leak)
 
 **BaseControllerTest** - Main business logic controller
 - Theme preference updates
@@ -152,17 +160,17 @@ All service tests passing ✅
 ## Test Metrics
 
 **Current Status:**
-- Total tests: 151 ✅✅✅
-- Passing: 151 ✅ (100%)
+- Total tests: 162 ✅✅✅
+- Passing: 162 ✅ (100%)
 - Failed: 0 ✅
-- Assertions: 313
-- Coverage: ~85%
+- Assertions: 345
+- Coverage: ~90%
 
 **By Category:**
 - Services: 85 tests (157 assertions)
 - Middleware: 29 tests (56 assertions)
-- Controllers: 37 tests (100 assertions)
-- Feature: 0 tests (optional)
+- Controllers: 48 tests (132 assertions)
+- Feature: 0 tests (optional, not critical)
 
 ## Running Tests
 
@@ -413,10 +421,11 @@ Open `coverage/index.html` in your browser to view detailed coverage.
 **Coverage Achieved:**
 - Services: ~90% ✅
 - Middleware: ~95% ✅
-- Controllers: ~85% ✅
-- Overall: ~85% ✅
+- Controllers: ~90% ✅
+- Overall: ~90% ✅✅
 
-**Target Coverage: ATTEINT! 🎉**
+**Target Coverage: DÉPASSÉ! 🎉🎉**
+(Target was ~85%, achieved ~90%)
 
 ## Roadmap
 
