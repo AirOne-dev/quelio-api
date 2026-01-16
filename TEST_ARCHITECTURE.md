@@ -19,11 +19,11 @@ tests/
 │   │   └── AuthMiddlewareTest.php      ✅ FAIT (29 tests, 56 assertions)
 │   │
 │   └── Controllers/           # Tests des contrôleurs
-│       ├── IconControllerTest.php      ✅ EXISTE (6 tests)
-│       ├── ManifestControllerTest.php  ✅ EXISTE (6 tests)
-│       ├── BaseControllerTest.php      ❌ À CRÉER
-│       ├── BaseGuestControllerTest.php ❌ À CRÉER
-│       └── DataControllerTest.php      ❌ À CRÉER
+│       ├── IconControllerTest.php      ✅ FAIT (6 tests)
+│       ├── ManifestControllerTest.php  ✅ FAIT (6 tests)
+│       ├── BaseControllerTest.php      ✅ FAIT (14 tests, 36 assertions)
+│       ├── DataControllerTest.php      ✅ FAIT (11 tests, 19 assertions)
+│       └── BaseGuestControllerTest.php ❌ À CRÉER (optionnel)
 │
 ├── Fixtures/                  # Données de test réelles
 │   └── KelioHtmlFixtures.php  ✅ FAIT (HTML réel de daryl.kelio.io)
@@ -229,8 +229,10 @@ Tests existants sont bons:
 
 **Recommandation**: Garder tel quel
 
-#### BaseControllerTest ❌ À CRÉER
-**Tests nécessaires:**
+#### BaseControllerTest ✅ FAIT (14 tests, 36 assertions)
+Tests complets du contrôleur principal.
+
+**Tests implémentés:**
 ```php
 Login Flow:
 - Login avec credentials valides
@@ -260,8 +262,10 @@ Login Form:
 - Formulaire contient tous les champs
 ```
 
-#### DataControllerTest ❌ À CRÉER
-**Tests nécessaires:**
+#### DataControllerTest ✅ FAIT (11 tests, 19 assertions)
+Tests complets de l'accès admin aux données.
+
+**Tests implémentés:**
 ```php
 Admin Access:
 - GET retourne données complètes
@@ -281,13 +285,13 @@ Admin Access:
 4. ✅ **RateLimiterTest** - FAIT (17 tests, 31 assertions)
 5. ✅ **AuthMiddlewareTest** - FAIT (29 tests, 56 assertions)
 
-### 🟡 Important (à faire ensuite):
-6. ❌ **BaseControllerTest** - Logique métier principale
-7. ❌ **DataControllerTest** - Accès admin
+### 🟡 Important (TOUS FAITS ✅):
+6. ✅ **BaseControllerTest** - FAIT (14 tests, 36 assertions)
+7. ✅ **DataControllerTest** - FAIT (11 tests, 19 assertions)
 
-### 🟢 Secondaire (nice to have):
-8. ❌ **BaseGuestControllerTest**
-9. ❌ **ApiRoutesTest** (Feature) - Nécessite setup HTTP complet
+### 🟢 Secondaire (optionnel):
+8. ❌ **BaseGuestControllerTest** - Formulaire de login (optionnel)
+9. ❌ **ApiRoutesTest** (Feature) - Tests end-to-end HTTP (optionnel)
 
 ---
 
@@ -320,15 +324,17 @@ tests/Integration/*                → Tests cassés, à recréer si besoin
 
 ## Métriques Actuelles
 
-- **Tests totaux**: 126 ✅
-- **Tests qui passent**: 126 ✅ (100%)
+- **Tests totaux**: 151 ✅✅✅
+- **Tests qui passent**: 151 ✅ (100%)
 - **Tests cassés**: 0 ✅
-- **Assertions**: 258
-- **Couverture estimée**: ~80%
+- **Assertions**: 313
+- **Couverture estimée**: ~85%
 
-## Métriques Cibles
+## Métriques DÉPASSÉES 🎉
 
-- **Tests totaux**: ~140 (avec controller tests)
-- **Tests qui passent**: 100%
-- **Tests cassés**: 0
+- **Objectif initial**: ~140 tests
+- **Réalisé**: 151 tests (+11 bonus)
 - **Couverture cible**: ~85%
+- **Couverture atteinte**: ~85% ✅
+
+**Tous les tests critiques et importants sont terminés !**
