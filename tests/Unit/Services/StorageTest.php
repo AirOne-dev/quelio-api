@@ -32,6 +32,42 @@ class StorageTest extends TestCase
         parent::tearDown();
     }
 
+    /**
+     * Helper method to create test weeks structure
+     */
+    private function createTestWeeks(array $dates = []): array
+    {
+        if (empty($dates)) {
+            $dates = [
+                '13-01-2026' => ['08:30', '12:00', '13:00', '18:30']
+            ];
+        }
+
+        $weeks = [];
+        foreach ($dates as $date => $hours) {
+            $weekKey = '2026-w-03'; // Default week for testing
+            if (!isset($weeks[$weekKey])) {
+                $weeks[$weekKey] = [
+                    'days' => [],
+                    'total_effective' => '10:00',
+                    'total_paid' => '10:14'
+                ];
+            }
+            $weeks[$weekKey]['days'][$date] = [
+                'hours' => $hours,
+                'breaks' => [
+                    'morning' => '00:00',
+                    'noon' => '01:00',
+                    'afternoon' => '00:00'
+                ],
+                'effective_to_paid' => ['+ 00:07 => morning break', '+ 00:07 => afternoon break'],
+                'effective' => '09:00',
+                'paid' => '09:14'
+            ];
+        }
+        return $weeks;
+    }
+
     // ========================================================================
     // DATA FILE MANAGEMENT
     // ========================================================================
@@ -40,7 +76,7 @@ class StorageTest extends TestCase
     {
         $username = 'testuser';
 
-        $result = $this->storage->saveUserData($username, [], '00:00', '00:00');
+        $result = $this->storage->saveUserData($username, []);
 
         $this->assertTrue($result);
         $this->assertFileExists($this->testDataFile);
@@ -69,19 +105,17 @@ class StorageTest extends TestCase
     public function test_saves_and_loads_user_data(): void
     {
         $username = 'testuser';
-        $hours = ['13/01/2026' => ['08:30', '12:00', '13:00', '18:30']];
-        $totalEffective = '10:00';
-        $totalPaid = '10:14';
+        $weeks = $this->createTestWeeks(['13-01-2026' => ['08:30', '12:00', '13:00', '18:30']]);
 
-        $this->storage->saveUserData($username, $hours, $totalEffective, $totalPaid);
+        $this->storage->saveUserData($username, $weeks);
 
         $userData = $this->storage->getUserData($username);
 
         $this->assertNotNull($userData);
-        $this->assertEquals($hours, $userData['hours']);
-        $this->assertEquals($totalEffective, $userData['total_effective']);
-        $this->assertEquals($totalPaid, $userData['total_paid']);
-        $this->assertArrayHasKey('last_save', $userData);
+        $this->assertArrayHasKey('weeks', $userData);
+        $this->assertEquals($weeks, $userData['weeks']);
+        $this->assertArrayHasKey('preferences', $userData);
+        $this->assertArrayHasKey('token', $userData);
     }
 
     public function test_returns_null_for_nonexistent_user(): void
@@ -96,11 +130,11 @@ class StorageTest extends TestCase
         $username = 'testuser';
         $token = 'test_token_123';
 
-        $this->storage->saveUserData($username, [], '00:00', '00:00', $token);
+        $this->storage->saveUserData($username, [], $token);
 
         $userData = $this->storage->getUserData($username);
 
-        $this->assertEquals($token, $userData['session_token']);
+        $this->assertEquals($token, $userData['token']);
     }
 
     public function test_preserves_existing_preferences_when_saving_data(): void
@@ -112,7 +146,7 @@ class StorageTest extends TestCase
         $this->storage->saveUserPreferences($username, $preferences);
 
         // Save user data (should preserve preferences)
-        $this->storage->saveUserData($username, [], '00:00', '00:00');
+        $this->storage->saveUserData($username, []);
 
         $userData = $this->storage->getUserData($username);
 
@@ -125,15 +159,15 @@ class StorageTest extends TestCase
         $token = 'existing_token';
 
         // Save with token
-        $this->storage->saveUserData($username, [], '00:00', '00:00', $token);
+        $this->storage->saveUserData($username, [], $token);
 
         // Save again without token
-        $this->storage->saveUserData($username, [], '01:00', '01:00', null);
+        $this->storage->saveUserData($username, [], null);
 
         $userData = $this->storage->getUserData($username);
 
         // Token should still be there
-        $this->assertEquals($token, $userData['session_token']);
+        $this->assertEquals($token, $userData['token']);
     }
 
     // ========================================================================
@@ -202,9 +236,9 @@ class StorageTest extends TestCase
         $userData = $this->storage->getUserData($username);
 
         $this->assertNotNull($userData);
-        $this->assertArrayHasKey('hours', $userData);
-        $this->assertArrayHasKey('total_effective', $userData);
-        $this->assertArrayHasKey('total_paid', $userData);
+        $this->assertArrayHasKey('weeks', $userData);
+        $this->assertArrayHasKey('preferences', $userData);
+        $this->assertArrayHasKey('token', $userData);
     }
 
     // ========================================================================
@@ -217,11 +251,11 @@ class StorageTest extends TestCase
         $token = 'test_token';
 
         // Save with token
-        $this->storage->saveUserData($username, [], '00:00', '00:00', $token);
+        $this->storage->saveUserData($username, [], $token);
 
         // Verify token exists
         $userData = $this->storage->getUserData($username);
-        $this->assertEquals($token, $userData['session_token']);
+        $this->assertEquals($token, $userData['token']);
 
         // Invalidate token
         $result = $this->storage->invalidateToken($username);
@@ -230,7 +264,7 @@ class StorageTest extends TestCase
 
         // Verify token is removed
         $userData = $this->storage->getUserData($username);
-        $this->assertArrayNotHasKey('session_token', $userData);
+        $this->assertArrayNotHasKey('token', $userData);
     }
 
     public function test_invalidate_returns_true_for_nonexistent_user(): void
@@ -249,7 +283,7 @@ class StorageTest extends TestCase
         $storage = new Storage(true); // Debug mode
         $username = 'testuser';
 
-        $storage->saveUserData($username, [], '00:00', '00:00');
+        $storage->saveUserData($username, []);
 
         $filePath = $storage->getDataFilePath();
         $content = file_get_contents($filePath);
@@ -267,7 +301,7 @@ class StorageTest extends TestCase
         $storage = new Storage(false); // Production mode
         $username = 'testuser';
 
-        $storage->saveUserData($username, [], '00:00', '00:00');
+        $storage->saveUserData($username, []);
 
         $filePath = $storage->getDataFilePath();
         $content = file_get_contents($filePath);
@@ -293,8 +327,8 @@ class StorageTest extends TestCase
         $user1 = 'user1';
         $user2 = 'user2';
 
-        $this->storage->saveUserData($user1, ['date1' => ['08:30']], '08:30', '08:30');
-        $this->storage->saveUserData($user2, ['date2' => ['09:00']], '09:00', '09:00');
+        $this->storage->saveUserData($user1, $this->createTestWeeks(['13-01-2026' => ['08:30']]));
+        $this->storage->saveUserData($user2, $this->createTestWeeks(['14-01-2026' => ['09:00']]));
 
         $allData = $this->storage->loadAllData();
 
@@ -308,17 +342,21 @@ class StorageTest extends TestCase
         $user1 = 'user1';
         $user2 = 'user2';
 
-        $this->storage->saveUserData($user1, ['date1' => ['08:30']], '08:30', '08:30');
-        $this->storage->saveUserData($user2, ['date2' => ['09:00']], '09:00', '09:00');
+        $weeks1 = $this->createTestWeeks(['13-01-2026' => ['08:30']]);
+        $weeks2 = $this->createTestWeeks(['14-01-2026' => ['09:00']]);
+        $weeks1Updated = $this->createTestWeeks(['13-01-2026' => ['10:00']]);
+
+        $this->storage->saveUserData($user1, $weeks1);
+        $this->storage->saveUserData($user2, $weeks2);
 
         // Update user1
-        $this->storage->saveUserData($user1, ['date1' => ['10:00']], '10:00', '10:00');
+        $this->storage->saveUserData($user1, $weeks1Updated);
 
         $user1Data = $this->storage->getUserData($user1);
         $user2Data = $this->storage->getUserData($user2);
 
-        $this->assertEquals(['date1' => ['10:00']], $user1Data['hours']);
-        $this->assertEquals(['date2' => ['09:00']], $user2Data['hours']); // Unchanged
+        $this->assertEquals($weeks1Updated, $user1Data['weeks']);
+        $this->assertEquals($weeks2, $user2Data['weeks']); // Unchanged
     }
 
     // ========================================================================
@@ -329,19 +367,19 @@ class StorageTest extends TestCase
     {
         $username = 'testuser';
 
-        $result = $this->storage->saveUserData($username, [], '00:00', '00:00');
+        $result = $this->storage->saveUserData($username, []);
 
         $this->assertTrue($result);
 
         $userData = $this->storage->getUserData($username);
-        $this->assertEquals([], $userData['hours']);
+        $this->assertEquals([], $userData['weeks']);
     }
 
     public function test_handles_unicode_in_data(): void
     {
         $username = 'tëstüser_日本語';
 
-        $result = $this->storage->saveUserData($username, [], '00:00', '00:00');
+        $result = $this->storage->saveUserData($username, []);
 
         $this->assertTrue($result);
 

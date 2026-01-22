@@ -138,7 +138,7 @@ class AuthContext
         }
 
         $userData = $this->storage->getUserData($this->username);
-        $existingToken = $userData['session_token'] ?? null;
+        $existingToken = $userData['token'] ?? null;
 
         // If token exists in storage, return it
         if ($existingToken !== null) {
@@ -151,12 +151,10 @@ class AuthContext
         $this->token = $newToken;
 
         // Save the new token if user data exists
-        if (isset($userData['hours'], $userData['total_effective'], $userData['total_paid'])) {
+        if (isset($userData['weeks'])) {
             $this->storage->saveUserData(
                 $this->username,
-                $userData['hours'],
-                $userData['total_effective'],
-                $userData['total_paid'],
+                $userData['weeks'],
                 $newToken
             );
         }

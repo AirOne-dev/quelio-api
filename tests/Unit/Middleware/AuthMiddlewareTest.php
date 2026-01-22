@@ -84,7 +84,7 @@ class AuthMiddlewareTest extends TestCase
 
         // Generate and save token
         $token = $this->auth->generateToken($username, $password);
-        $this->storage->saveUserData($username, [], '00:00', '00:00', $token);
+        $this->storage->saveUserData($username, [], $token);
 
         // Mock Kelio login success
         $_POST['token'] = $token;
@@ -102,7 +102,7 @@ class AuthMiddlewareTest extends TestCase
 
         // Generate and save token
         $token = $this->auth->generateToken($username, $password);
-        $this->storage->saveUserData($username, [], '00:00', '00:00', $token);
+        $this->storage->saveUserData($username, [], $token);
 
         // Token in GET parameter
         $_GET['token'] = $token;
@@ -117,7 +117,7 @@ class AuthMiddlewareTest extends TestCase
         $password = 'testpass';
 
         $token = $this->auth->generateToken($username, $password);
-        $this->storage->saveUserData($username, [], '00:00', '00:00', $token);
+        $this->storage->saveUserData($username, [], $token);
 
         // Verify token contains correct credentials
         $extractedUsername = $this->auth->getUsernameFromToken($token);
@@ -363,7 +363,7 @@ class AuthMiddlewareTest extends TestCase
         $jsessionid = 'TEST_SESSION_789';
 
         // Save user data first (required for token generation)
-        $this->storage->saveUserData($username, [], '00:00', '00:00');
+        $this->storage->saveUserData($username, []);
 
         $this->authContext->setCredentialsAuth($username, $password, $jsessionid);
 
@@ -455,18 +455,18 @@ class AuthMiddlewareTest extends TestCase
 
         // Save token to storage
         $token = $this->auth->generateToken($username, $password);
-        $this->storage->saveUserData($username, [], '00:00', '00:00', $token);
+        $this->storage->saveUserData($username, [], $token);
 
         // Verify token exists
         $userData = $this->storage->getUserData($username);
-        $this->assertArrayHasKey('session_token', $userData);
+        $this->assertArrayHasKey('token', $userData);
 
         // Simulate failed auth by invalidating token
         $this->storage->invalidateToken($username);
 
         // Verify token is removed
         $userData = $this->storage->getUserData($username);
-        $this->assertArrayNotHasKey('session_token', $userData);
+        $this->assertArrayNotHasKey('token', $userData);
     }
 
     // ========================================================================
@@ -487,7 +487,7 @@ class AuthMiddlewareTest extends TestCase
         $username = 'testuser';
         $password = 'testpass';
         $token = $this->auth->generateToken($username, $password);
-        $this->storage->saveUserData($username, [], '00:00', '00:00', $token);
+        $this->storage->saveUserData($username, [], $token);
 
         // Provide both token and credentials
         $_POST['token'] = $token;

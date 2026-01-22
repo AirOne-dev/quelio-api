@@ -36,14 +36,14 @@ api/
 
 ### Routes
 
-| Méthode | Route | Description | Auth |
-|---------|-------|-------------|------|
-| GET | `/` | Formulaire de connexion (si activé) | Non |
-| POST | `/?action=login` | Connexion et récupération des heures | Credentials Kelio |
-| POST | `/?action=update_preferences` | Mise à jour des préférences | Token |
-| GET | `/icon.svg` | Icône PWA dynamique | Non |
-| GET | `/manifest.json` | Manifest PWA | Non |
-| GET/POST | `/data.json` | Accès aux données brutes | Admin |
+| Méthode | Route | Description | Auth | Réponse |
+|---------|-------|-------------|------|---------|
+| GET | `/` | Formulaire de connexion (si activé) | Non | HTML/JSON |
+| POST | `/` | Connexion et récupération des heures | Credentials/Token | Données utilisateur complètes |
+| POST | `/?action=update_preferences` | Mise à jour des préférences | Token | Données utilisateur complètes |
+| GET | `/icon.svg` | Icône PWA dynamique | Non | SVG |
+| GET | `/manifest.json` | Manifest PWA | Non | JSON |
+| GET/POST | `/data.json` | Accès aux données brutes | Admin | Toutes les données |
 
 ## Configuration
 
@@ -135,32 +135,121 @@ curl "http://votre-serveur.com/manifest.json?primary=4F46E5&secondary=059669&bac
 
 ## Réponses API
 
-### Succès (login)
+### Succès (login et update_preferences)
+
+Les deux endpoints retournent la structure complète des données utilisateur:
 
 ```json
 {
-    "authenticated_with": "credentials",
-    "hours": {"21-10-2024": ["08:30", "12:00", "13:00", "18:30"]},
-    "total_effective": "15:45",
-    "total_paid": "16:13",
-    "preferences": {"theme": "ocean", "minutes_objective": 2280},
-    "token": "a1b2c3d4...abc123:1234567890",
-    "cache": false
+  "preferences": {
+    "theme": "ocean",
+    "minutes_objective": 2280
+  },
+  "token": "base64:encrypted:timestamp:signature",
+  "weeks": {
+    "2026-w-03": {
+      "days": {
+        "13-01-2026": {
+          "hours": ["08:30", "12:00", "13:00", "18:30"],
+          "breaks": {
+            "morning": "00:00",
+            "noon": "01:00",
+            "afternoon": "00:00"
+          },
+          "effective_to_paid": [
+            "+ 00:07 => morning break",
+            "+ 00:07 => afternoon break"
+          ],
+          "effective": "09:00",
+          "paid": "09:14"
+        },
+        "14-01-2026": {
+          "hours": ["08:30", "12:00", "13:00", "17:30"],
+          "breaks": {
+            "morning": "00:00",
+            "noon": "01:00",
+            "afternoon": "00:00"
+          },
+          "effective_to_paid": [
+            "+ 00:07 => morning break",
+            "+ 00:07 => afternoon break"
+          ],
+          "effective": "08:00",
+          "paid": "08:14"
+        }
+      },
+      "total_effective": "17:00",
+      "total_paid": "17:28"
+    },
+    "2026-w-04": {
+      "days": {
+        "20-01-2026": { ... }
+      },
+      "total_effective": "08:30",
+      "total_paid": "08:44"
+    }
+  }
 }
 ```
 
-### Erreurs communes
+**Structure des données:**
+- `preferences`: Préférences utilisateur (thème, objectif de minutes)
+- `token`: Token d'authentification pour les requêtes suivantes
+- `weeks`: Données organisées par semaine (format ISO: YYYY-w-WW)
+  - `days`: Détails par jour
+    - `hours`: Horaires badgés
+    - `breaks`: Pauses détectées (matin, midi, après-midi)
+    - `effective_to_paid`: Explications des transformations
+    - `effective`: Heures effectives travaillées
+    - `paid`: Heures payées (avec bonus pauses)
+  - `total_effective`: Total hebdomadaire effectif
+  - `total_paid`: Total hebdomadaire payé
 
-| Code | Message | Cause |
-|------|---------|-------|
-| 401 | Invalid or expired token | Token invalide ou mot de passe Kelio changé |
-| 404 | No cached data found | Première connexion avec token sans cache |
-| 429 | Too many requests | Rate limiting dépassé |
-| 500 | Internal server error | Erreur serveur ou connexion Kelio échouée |
+### Erreurs
+
+Toutes les erreurs utilisent le champ `error` (singulier):
+
+**Erreur simple:**
+```json
+{
+  "error": "Invalid or expired token"
+}
+```
+
+**Erreur avec contexte:**
+```json
+{
+  "error": "Failed to fetch data from Kelio. Please login again.",
+  "token_invalidated": true
+}
+```
+
+**Erreur de validation (avec détails par champ):**
+```json
+{
+  "error": "Validation failed",
+  "fields": {
+    "theme": "Invalid theme format. Only alphanumeric, underscore and dash allowed (max 50 chars)",
+    "minutes_objective": "Invalid minutes objective. Must be > 0"
+  }
+}
+```
+
+### Codes d'erreur
+
+| Code | Message type | Cause |
+|------|--------------|-------|
+| 400 | Bad Request | Paramètres invalides ou manquants |
+| 401 | Unauthorized | Token invalide/expiré ou identifiants incorrects |
+| 403 | Forbidden | Accès refusé (admin requis) |
+| 404 | Not Found | Ressource non trouvée |
+| 422 | Validation Error | Erreurs de validation des champs |
+| 429 | Too Many Requests | Rate limiting dépassé |
+| 500 | Internal Server Error | Erreur serveur ou connexion Kelio échouée |
 
 ## Tests
 
-Le projet dispose d'une suite de tests complète avec **177 tests** et **~95% de couverture de code**.
+Le projet dispose d'une suite de tests complète avec **242 tests** et **590 assertions** - **100% de réussite**.
 
 ### Lancer les tests localement
 
@@ -172,7 +261,7 @@ Le projet dispose d'une suite de tests complète avec **177 tests** et **~95% de
 ./run-tests.sh --unit
 
 # Test spécifique
-./run-tests.sh --filter AuthTest
+./run-tests.sh --filter TimeCalculatorTest
 
 # Génération du rapport de couverture
 ./run-tests.sh --coverage
@@ -181,7 +270,7 @@ Le projet dispose d'une suite de tests complète avec **177 tests** et **~95% de
 ### CI/CD GitHub Actions
 
 La CI vérifie automatiquement à chaque push :
-- ✅ Tous les tests passent
+- ✅ Tous les tests passent (242/242)
 - ✅ Couverture minimale de 80% respectée
 - ✅ Aucun test incomplet, risky ou warning
 - ✅ Nombre de tests vérifié
@@ -189,18 +278,33 @@ La CI vérifie automatiquement à chaque push :
 ### Structure des tests
 
 - **Feature** (15 tests) : Tests end-to-end du routeur HTTP
-- **Unit** (162 tests) :
-  - Services : Auth, Storage, KelioClient, RateLimiter, TimeCalculator
-  - Controllers : Base, BaseGuest, Data, Icon, Manifest
+- **Unit** (227 tests) :
+  - Services : Auth, Storage, KelioClient, RateLimiter, **TimeCalculator (avec tests multi-semaines)**
+  - Controllers : **Base (avec tests multi-semaines)**, BaseGuest, Data, Icon, Manifest
   - Middleware : AuthMiddleware
+
+### Tests clés ajoutés
+
+- ✅ Validation de la structure hebdomadaire des données
+- ✅ Tests de récupération multi-semaines (3+ semaines)
+- ✅ Vérification des détails de pauses par jour
+- ✅ Validation des transformations effective→paid
+- ✅ Persistance des données multi-semaines dans le storage
 
 ## Notes techniques
 
-- **Calcul des heures** : Pause midi minimum de 7 minutes si travail entre 11h-14h, pauses auto ajoutées selon seuils
-- **Cache** : Sauvegarde automatique après chaque récupération réussie, fallback en cas d'échec de connexion
-- **Tokens** : SHA-256 hash (username + password + timestamp), invalide si mot de passe Kelio change
-- **Rate limiting** : Protection anti-brute force configurée dans `config.php`
-- **Sécurité** : Mots de passe jamais stockés, tokens CSRF Kelio, blocage fichiers sensibles via `.htaccess`/`nginx.conf`
+- **Structure hebdomadaire** : Les données sont organisées par semaine ISO (YYYY-w-WW) avec historique complet
+- **Détails journaliers** : Chaque jour inclut horaires, pauses détaillées, et transformations effective→paid
+- **Multi-semaines** : L'API peut retourner des données couvrant plusieurs semaines dans une seule réponse
+- **Calcul des heures** :
+  - **Pause midi minimum** : 1 heure obligatoire si travail entre 12h-14h (configurable)
+  - **Bonus pauses** : 7 minutes ajoutées si travail après 11h (matin) et 16h (après-midi)
+  - Si pause midi < 1h, le temps manquant est déduit des bonus (maximum = total des bonus)
+  - Traçabilité complète des transformations dans `effective_to_paid`
+- **Cache** : Sauvegarde automatique après chaque récupération réussie avec structure complète
+- **Tokens** : AES-256-CBC encryption (username + password + timestamp + signature)
+- **Rate limiting** : Protection anti-brute force (5 tentatives / 5 minutes par défaut)
+- **Sécurité** : Mots de passe chiffrés dans tokens, CSRF Kelio, headers de sécurité, file locking
 
 ## Dépannage
 

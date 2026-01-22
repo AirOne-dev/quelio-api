@@ -212,16 +212,34 @@ class DataControllerTest extends TestCase
 
     public function test_preserves_hours_data_structure(): void
     {
-        $hoursData = [
-            '13/01/2026' => ['08:30', '12:00', '13:00', '18:30'],
-            '14/01/2026' => ['08:45', '12:15', '13:15', '18:00']
+        $weeksData = [
+            '2026-w-03' => [
+                'days' => [
+                    '13-01-2026' => [
+                        'hours' => ['08:30', '12:00', '13:00', '18:30'],
+                        'breaks' => ['morning' => '00:00', 'noon' => '01:00', 'afternoon' => '00:00'],
+                        'effective_to_paid' => [],
+                        'effective' => '09:00',
+                        'paid' => '09:14'
+                    ],
+                    '14-01-2026' => [
+                        'hours' => ['08:45', '12:15', '13:15', '18:00'],
+                        'breaks' => ['morning' => '00:00', 'noon' => '01:00', 'afternoon' => '00:00'],
+                        'effective_to_paid' => [],
+                        'effective' => '09:00',
+                        'paid' => '09:14'
+                    ]
+                ],
+                'total_effective' => '18:00',
+                'total_paid' => '18:14'
+            ]
         ];
 
         $testData = [
             'testuser' => [
-                'hours' => $hoursData,
-                'total_effective' => '18:00',
-                'total_paid' => '18:14'
+                'preferences' => [],
+                'token' => null,
+                'weeks' => $weeksData
             ]
         ];
 
@@ -233,8 +251,8 @@ class DataControllerTest extends TestCase
 
         $response = json_decode($output, true);
 
-        $this->assertEquals($hoursData, $response['testuser']['hours']);
-        $this->assertCount(4, $response['testuser']['hours']['13/01/2026']);
+        $this->assertEquals($weeksData, $response['testuser']['weeks']);
+        $this->assertCount(4, $response['testuser']['weeks']['2026-w-03']['days']['13-01-2026']['hours']);
     }
 
     // ========================================================================
@@ -245,9 +263,9 @@ class DataControllerTest extends TestCase
     {
         $testData = [
             'tëstüser_日本語' => [
-                'hours' => [],
-                'total_effective' => '00:00',
-                'total_paid' => '00:00'
+                'preferences' => [],
+                'token' => null,
+                'weeks' => []
             ]
         ];
 
@@ -264,18 +282,34 @@ class DataControllerTest extends TestCase
 
     public function test_handles_large_hours_array(): void
     {
-        // Create data with many days
-        $hours = [];
+        // Create data with many days across multiple weeks
+        $weeks = [];
         for ($i = 1; $i <= 31; $i++) {
-            $date = sprintf('%02d/01/2026', $i);
-            $hours[$date] = ['08:30', '12:00', '13:00', '18:30'];
+            $date = sprintf('%02d-01-2026', $i);
+            $weekKey = '2026-w-' . str_pad((int)ceil($i / 7), 2, '0', STR_PAD_LEFT);
+
+            if (!isset($weeks[$weekKey])) {
+                $weeks[$weekKey] = [
+                    'days' => [],
+                    'total_effective' => '00:00',
+                    'total_paid' => '00:00'
+                ];
+            }
+
+            $weeks[$weekKey]['days'][$date] = [
+                'hours' => ['08:30', '12:00', '13:00', '18:30'],
+                'breaks' => ['morning' => '00:00', 'noon' => '01:00', 'afternoon' => '00:00'],
+                'effective_to_paid' => [],
+                'effective' => '09:00',
+                'paid' => '09:14'
+            ];
         }
 
         $testData = [
             'testuser' => [
-                'hours' => $hours,
-                'total_effective' => '248:00',
-                'total_paid' => '251:28'
+                'preferences' => [],
+                'token' => null,
+                'weeks' => $weeks
             ]
         ];
 
@@ -287,6 +321,11 @@ class DataControllerTest extends TestCase
 
         $response = json_decode($output, true);
 
-        $this->assertCount(31, $response['testuser']['hours']);
+        // Count total days across all weeks
+        $totalDays = 0;
+        foreach ($response['testuser']['weeks'] as $week) {
+            $totalDays += count($week['days']);
+        }
+        $this->assertEquals(31, $totalDays);
     }
 }

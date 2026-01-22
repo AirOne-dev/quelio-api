@@ -74,7 +74,7 @@ class BaseControllerTest extends TestCase
 
         // Setup authenticated context
         $this->authContext->setCredentialsAuth($username, $password, $jsessionid);
-        $this->storage->saveUserData($username, [], '00:00', '00:00');
+        $this->storage->saveUserData($username, []);
 
         $_POST['theme'] = 'ocean';
 
@@ -86,8 +86,8 @@ class BaseControllerTest extends TestCase
         $response = json_decode($output, true);
 
         $this->assertNotNull($response);
-        $this->assertTrue($response['success'] ?? false);
-        $this->assertEquals($username, $response['username']);
+        $this->assertIsArray($response);
+        $this->assertArrayHasKey('preferences', $response);
         $this->assertEquals('ocean', $response['preferences']['theme']);
     }
 
@@ -98,7 +98,7 @@ class BaseControllerTest extends TestCase
         $jsessionid = 'TEST_SESSION_123';
 
         $this->authContext->setCredentialsAuth($username, $password, $jsessionid);
-        $this->storage->saveUserData($username, [], '00:00', '00:00');
+        $this->storage->saveUserData($username, []);
 
         $_POST['theme'] = 'invalid theme!@#'; // Invalid characters
 
@@ -121,7 +121,7 @@ class BaseControllerTest extends TestCase
         $jsessionid = 'TEST_SESSION_123';
 
         $this->authContext->setCredentialsAuth($username, $password, $jsessionid);
-        $this->storage->saveUserData($username, [], '00:00', '00:00');
+        $this->storage->saveUserData($username, []);
 
         $_POST['theme'] = 'dark-mode_2024'; // Valid: alphanumeric, dash, underscore
 
@@ -131,7 +131,7 @@ class BaseControllerTest extends TestCase
 
         $response = json_decode($output, true);
 
-        $this->assertTrue($response['success'] ?? false);
+        $this->assertArrayHasKey('preferences', $response);
         $this->assertEquals('dark-mode_2024', $response['preferences']['theme']);
     }
 
@@ -142,7 +142,7 @@ class BaseControllerTest extends TestCase
         $jsessionid = 'TEST_SESSION_123';
 
         $this->authContext->setCredentialsAuth($username, $password, $jsessionid);
-        $this->storage->saveUserData($username, [], '00:00', '00:00');
+        $this->storage->saveUserData($username, []);
 
         $_POST['theme'] = str_repeat('a', 51); // 51 characters (max is 50)
 
@@ -167,7 +167,7 @@ class BaseControllerTest extends TestCase
         $jsessionid = 'TEST_SESSION_123';
 
         $this->authContext->setCredentialsAuth($username, $password, $jsessionid);
-        $this->storage->saveUserData($username, [], '00:00', '00:00');
+        $this->storage->saveUserData($username, []);
 
         $_POST['minutes_objective'] = '480'; // 8 hours
 
@@ -177,7 +177,7 @@ class BaseControllerTest extends TestCase
 
         $response = json_decode($output, true);
 
-        $this->assertTrue($response['success'] ?? false);
+        $this->assertArrayHasKey('preferences', $response);
         $this->assertEquals(480, $response['preferences']['minutes_objective']);
     }
 
@@ -188,7 +188,7 @@ class BaseControllerTest extends TestCase
         $jsessionid = 'TEST_SESSION_123';
 
         $this->authContext->setCredentialsAuth($username, $password, $jsessionid);
-        $this->storage->saveUserData($username, [], '00:00', '00:00');
+        $this->storage->saveUserData($username, []);
 
         $_POST['minutes_objective'] = '0';
 
@@ -210,7 +210,7 @@ class BaseControllerTest extends TestCase
         $jsessionid = 'TEST_SESSION_123';
 
         $this->authContext->setCredentialsAuth($username, $password, $jsessionid);
-        $this->storage->saveUserData($username, [], '00:00', '00:00');
+        $this->storage->saveUserData($username, []);
 
         $_POST['minutes_objective'] = '-100';
 
@@ -235,7 +235,7 @@ class BaseControllerTest extends TestCase
         $jsessionid = 'TEST_SESSION_123';
 
         $this->authContext->setCredentialsAuth($username, $password, $jsessionid);
-        $this->storage->saveUserData($username, [], '00:00', '00:00');
+        $this->storage->saveUserData($username, []);
 
         $_POST['theme'] = 'ocean';
         $_POST['minutes_objective'] = '450';
@@ -246,7 +246,7 @@ class BaseControllerTest extends TestCase
 
         $response = json_decode($output, true);
 
-        $this->assertTrue($response['success'] ?? false);
+        $this->assertArrayHasKey('preferences', $response);
         $this->assertEquals('ocean', $response['preferences']['theme']);
         $this->assertEquals(450, $response['preferences']['minutes_objective']);
     }
@@ -258,7 +258,7 @@ class BaseControllerTest extends TestCase
         $jsessionid = 'TEST_SESSION_123';
 
         $this->authContext->setCredentialsAuth($username, $password, $jsessionid);
-        $this->storage->saveUserData($username, [], '00:00', '00:00');
+        $this->storage->saveUserData($username, []);
 
         // First update: theme only
         $_POST['theme'] = 'ocean';
@@ -287,7 +287,7 @@ class BaseControllerTest extends TestCase
         $jsessionid = 'TEST_SESSION_123';
 
         $this->authContext->setCredentialsAuth($username, $password, $jsessionid);
-        $this->storage->saveUserData($username, [], '00:00', '00:00');
+        $this->storage->saveUserData($username, []);
 
         // No preferences provided
         $_POST = [];
@@ -309,7 +309,7 @@ class BaseControllerTest extends TestCase
         $jsessionid = 'TEST_SESSION_123';
 
         $this->authContext->setCredentialsAuth($username, $password, $jsessionid);
-        $this->storage->saveUserData($username, [], '00:00', '00:00');
+        $this->storage->saveUserData($username, []);
 
         $_POST['theme'] = 'invalid!@#';
         $_POST['minutes_objective'] = '-100';
@@ -337,7 +337,7 @@ class BaseControllerTest extends TestCase
         $jsessionid = 'TEST_SESSION_123';
 
         $this->authContext->setCredentialsAuth($username, $password, $jsessionid);
-        $this->storage->saveUserData($username, [], '00:00', '00:00');
+        $this->storage->saveUserData($username, []);
 
         $_POST['theme'] = 'ocean';
 
@@ -351,14 +351,14 @@ class BaseControllerTest extends TestCase
         $this->assertNotEmpty($response['token']);
     }
 
-    public function test_returns_username_in_response(): void
+    public function test_returns_complete_user_data_in_response(): void
     {
         $username = 'testuser';
         $password = 'testpass';
         $jsessionid = 'TEST_SESSION_123';
 
         $this->authContext->setCredentialsAuth($username, $password, $jsessionid);
-        $this->storage->saveUserData($username, [], '00:00', '00:00');
+        $this->storage->saveUserData($username, []);
 
         $_POST['theme'] = 'ocean';
 
@@ -368,7 +368,10 @@ class BaseControllerTest extends TestCase
 
         $response = json_decode($output, true);
 
-        $this->assertEquals($username, $response['username']);
+        // Should return complete user data structure (same as data.json)
+        $this->assertArrayHasKey('preferences', $response);
+        $this->assertArrayHasKey('token', $response);
+        $this->assertArrayHasKey('weeks', $response);
     }
 
     public function test_returns_all_preferences_in_response(): void
@@ -378,7 +381,7 @@ class BaseControllerTest extends TestCase
         $jsessionid = 'TEST_SESSION_123';
 
         $this->authContext->setCredentialsAuth($username, $password, $jsessionid);
-        $this->storage->saveUserData($username, [], '00:00', '00:00');
+        $this->storage->saveUserData($username, []);
 
         // Set initial preferences
         $this->storage->saveUserPreferences($username, ['theme' => 'dark', 'minutes_objective' => 420]);
@@ -440,9 +443,9 @@ class BaseControllerTest extends TestCase
 
         $this->assertNotNull($response);
         $this->assertIsArray($response);
-        $this->assertArrayHasKey('hours', $response);
-        $this->assertArrayHasKey('total_effective', $response);
-        $this->assertArrayHasKey('total_paid', $response);
+        $this->assertArrayHasKey('weeks', $response);
+        $this->assertArrayHasKey('preferences', $response);
+        $this->assertArrayHasKey('token', $response);
     }
 
     public function test_fetch_fresh_data_handles_missing_jsessionid(): void
@@ -546,9 +549,9 @@ class BaseControllerTest extends TestCase
         // Verify data was saved
         $userData = $this->storage->getUserData($username);
         $this->assertNotNull($userData);
-        $this->assertArrayHasKey('hours', $userData);
-        $this->assertArrayHasKey('total_effective', $userData);
-        $this->assertArrayHasKey('total_paid', $userData);
+        $this->assertArrayHasKey('weeks', $userData);
+        $this->assertArrayHasKey('preferences', $userData);
+        $this->assertArrayHasKey('token', $userData);
     }
 
     public function test_fetch_fresh_data_invalidates_token_on_error(): void
@@ -583,5 +586,106 @@ class BaseControllerTest extends TestCase
         $this->assertArrayHasKey('error', $response);
         $this->assertStringContainsString('Failed to fetch data from Kelio', $response['error']);
         $this->assertTrue($response['token_invalidated'] ?? false);
+    }
+
+    public function test_login_returns_multiple_weeks_data(): void
+    {
+        $username = 'testuser';
+        $password = 'testpass';
+        $jsessionid = 'TEST_SESSION_123';
+
+        $this->authContext->setCredentialsAuth($username, $password, $jsessionid);
+
+        // Mock KelioClient to return data spanning multiple weeks
+        $mockClient = $this->createMock(KelioClient::class);
+        $mockClient->expects($this->once())
+            ->method('fetchAllHours')
+            ->willReturn([
+                ['13/01/2026' => ['08:30', '12:00', '13:00', '18:30']], // Week 3
+                ['20/01/2026' => ['08:30', '12:00', '13:00', '18:00']], // Week 4
+                ['27/01/2026' => ['08:00', '12:00', '13:00', '17:00']]  // Week 5
+            ]);
+
+        $controller = new BaseController(
+            $this->storage,
+            $this->auth,
+            $mockClient,
+            $this->timeCalculator,
+            $this->authContext,
+            $this->getConfig()
+        );
+
+        ob_start();
+        $controller->loginAction();
+        $output = ob_get_clean();
+
+        $response = json_decode($output, true);
+
+        // Verify response structure
+        $this->assertNotNull($response);
+        $this->assertArrayHasKey('weeks', $response);
+        $this->assertArrayHasKey('preferences', $response);
+        $this->assertArrayHasKey('token', $response);
+
+        // Verify we have 3 different weeks
+        $this->assertCount(3, $response['weeks'], 'Should have exactly 3 weeks');
+        $this->assertArrayHasKey('2026-w-03', $response['weeks']);
+        $this->assertArrayHasKey('2026-w-04', $response['weeks']);
+        $this->assertArrayHasKey('2026-w-05', $response['weeks']);
+
+        // Verify each week has the correct structure
+        foreach ($response['weeks'] as $weekKey => $weekData) {
+            $this->assertArrayHasKey('days', $weekData, "$weekKey should have 'days'");
+            $this->assertArrayHasKey('total_effective', $weekData, "$weekKey should have 'total_effective'");
+            $this->assertArrayHasKey('total_paid', $weekData, "$weekKey should have 'total_paid'");
+
+            // Verify days have detailed structure
+            foreach ($weekData['days'] as $date => $dayData) {
+                $this->assertArrayHasKey('hours', $dayData);
+                $this->assertArrayHasKey('breaks', $dayData);
+                $this->assertArrayHasKey('effective', $dayData);
+                $this->assertArrayHasKey('paid', $dayData);
+                $this->assertArrayHasKey('effective_to_paid', $dayData);
+            }
+        }
+    }
+
+    public function test_stored_data_persists_multiple_weeks(): void
+    {
+        $username = 'testuser';
+        $password = 'testpass';
+        $jsessionid = 'TEST_SESSION_123';
+
+        $this->authContext->setCredentialsAuth($username, $password, $jsessionid);
+
+        // Mock KelioClient to return multi-week data
+        $mockClient = $this->createMock(KelioClient::class);
+        $mockClient->expects($this->once())
+            ->method('fetchAllHours')
+            ->willReturn([
+                ['13/01/2026' => ['08:30', '12:00', '13:00', '18:30']], // Week 3
+                ['20/01/2026' => ['08:30', '12:00', '13:00', '18:00']]  // Week 4
+            ]);
+
+        $controller = new BaseController(
+            $this->storage,
+            $this->auth,
+            $mockClient,
+            $this->timeCalculator,
+            $this->authContext,
+            $this->getConfig()
+        );
+
+        ob_start();
+        $controller->loginAction();
+        ob_end_clean();
+
+        // Verify data was saved with multiple weeks
+        $userData = $this->storage->getUserData($username);
+        $this->assertNotNull($userData);
+        $this->assertArrayHasKey('weeks', $userData);
+        $this->assertCount(2, $userData['weeks'], 'Storage should contain 2 weeks');
+        $this->assertArrayHasKey('2026-w-03', $userData['weeks']);
+        $this->assertArrayHasKey('2026-w-04', $userData['weeks']);
     }
 }

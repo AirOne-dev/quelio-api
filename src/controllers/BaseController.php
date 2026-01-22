@@ -70,12 +70,12 @@ class BaseController extends ActionController
         $success = $this->storage->saveUserPreferences($username, $preferences);
 
         if ($success) {
-            JsonResponse::success([
-                'success' => true,
-                'username' => $username,
-                'preferences' => $this->storage->getUserPreferences($username),
-                'token' => $this->authContext->getOrGenerateToken(),
-            ]);
+            // Ensure token is generated/retrieved
+            $this->authContext->getOrGenerateToken();
+
+            // Return all user data (same format as data.json, filtered for this user)
+            $userData = $this->storage->getUserData($username);
+            JsonResponse::success($userData);
         } else {
             JsonResponse::error('Failed to save preferences', 500);
         }
@@ -99,26 +99,18 @@ class BaseController extends ActionController
 
             // Fetch hours data
             $hoursArrays = $this->kelioClient->fetchAllHours($jsessionid);
-            $hours = $this->timeCalculator->mergeHoursByDay(...$hoursArrays);
+            $mergedHours = $this->timeCalculator->mergeHoursByDay(...$hoursArrays);
 
-            // Calculate totals
-            $totalEffective = $this->timeCalculator->calculateTotalWorkingHours($hours);
-            $totalPaid = $this->timeCalculator->calculateTotalWorkingHours($hours, $this->config['pause_time']);
+            // Calculate weekly data with all details
+            $weeks = $this->timeCalculator->calculateWeeklyData($mergedHours);
 
             // Save the successful result with token
-            $this->storage->saveUserData($username, $hours, $totalEffective, $totalPaid, $token);
+            $this->storage->saveUserData($username, $weeks, $token);
 
-            // Get user preferences
-            $preferences = $this->storage->getUserPreferences($username);
+            // Return all user data (same format as data.json, filtered for this user)
+            $userData = $this->storage->getUserData($username);
 
-            JsonResponse::success([
-                'username' => $username,
-                'hours' => $hours,
-                'total_effective' => $totalEffective,
-                'total_paid' => $totalPaid,
-                'preferences' => $preferences,
-                'token' => $token
-            ]);
+            JsonResponse::success($userData);
         } catch (\Throwable $th) {
             // Invalidate token on kelio fetch error
             $this->storage->invalidateToken($username);

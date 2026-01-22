@@ -126,11 +126,11 @@ class Auth
 
             $userData = $this->storage->getUserData($username);
 
-            if ($userData === null || !isset($userData['session_token'])) {
+            if ($userData === null || !isset($userData['token'])) {
                 return false;
             }
 
-            $savedToken = $userData['session_token'];
+            $savedToken = $userData['token'];
 
             // Check if token matches
             if ($savedToken !== $token) {

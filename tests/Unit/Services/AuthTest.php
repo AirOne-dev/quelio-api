@@ -192,7 +192,7 @@ class AuthTest extends TestCase
         $token = $this->auth->generateToken($username, 'testpass');
 
         // Save token to storage
-        $this->storage->saveUserData($username, [], '00:00', '00:00', $token);
+        $this->storage->saveUserData($username, [], $token);
 
         $isValid = $this->auth->validateToken($token);
 
@@ -223,7 +223,7 @@ class AuthTest extends TestCase
         $token2 = $this->auth->generateToken($username, 'different');
 
         // Save token1 to storage
-        $this->storage->saveUserData($username, [], '00:00', '00:00', $token1);
+        $this->storage->saveUserData($username, [], $token1);
 
         // Try to validate token2
         $isValid = $this->auth->validateToken($token2);

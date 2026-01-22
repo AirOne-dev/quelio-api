@@ -143,7 +143,7 @@ class ApiRoutesTest extends TestCase
         $token = $auth->generateToken($username, $password);
 
         // Save user data with token (required for token validation)
-        $this->storage->saveUserData($username, [], '00:00', '00:00', $token);
+        $this->storage->saveUserData($username, [], $token);
 
         // Use token in POST
         $output = $this->request('POST', '/', ['token' => $token]);
@@ -151,9 +151,9 @@ class ApiRoutesTest extends TestCase
         $response = json_decode($output, true);
         $this->assertNotNull($response);
 
-        // Should either succeed or return validation error (no hours data)
+        // Should either return user data or error
         $this->assertTrue(
-            isset($response['success']) || isset($response['error'])
+            isset($response['preferences']) || isset($response['error'])
         );
     }
 
@@ -172,7 +172,7 @@ class ApiRoutesTest extends TestCase
         $token = $auth->generateToken($username, $password);
 
         // Save user data with token (required for token validation)
-        $this->storage->saveUserData($username, [], '00:00', '00:00', $token);
+        $this->storage->saveUserData($username, [], $token);
 
         // Update preferences
         $output = $this->request('POST', '/', [
@@ -188,7 +188,10 @@ class ApiRoutesTest extends TestCase
             $this->fail('Request failed with error: ' . $response['error']);
         }
 
-        $this->assertTrue($response['success'] ?? false, 'success field should be true. Response: ' . json_encode($response));
+        // Should return complete user data structure
+        $this->assertArrayHasKey('preferences', $response);
+        $this->assertArrayHasKey('token', $response);
+        $this->assertArrayHasKey('weeks', $response);
         $this->assertEquals('ocean', $response['preferences']['theme']);
     }
 

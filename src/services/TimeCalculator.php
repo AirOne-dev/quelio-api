@@ -180,4 +180,197 @@ class TimeCalculator
 
         return null;
     }
+
+    /**
+     * Get week key from date (format: YYYY-w-WW)
+     * @param string $date Format: dd-mm-yyyy
+     * @return string Format: YYYY-w-WW
+     */
+    private function getWeekKey(string $date): string
+    {
+        $parts = explode('-', $date);
+        $timestamp = mktime(0, 0, 0, (int)$parts[1], (int)$parts[0], (int)$parts[2]);
+        $weekNumber = date('W', $timestamp);
+        $year = date('o', $timestamp); // ISO-8601 year
+        return sprintf('%s-w-%02d', $year, $weekNumber);
+    }
+
+    /**
+     * Format minutes to HH:MM
+     * @param int $minutes
+     * @return string
+     */
+    private function formatMinutes(int $minutes): string
+    {
+        $h = floor($minutes / 60);
+        $m = $minutes % 60;
+        return sprintf("%02d:%02d", $h, $m);
+    }
+
+    /**
+     * Calculate daily details for a single day
+     * @param string $date
+     * @param array $hours
+     * @return array
+     */
+    private function calculateDailyDetails(string $date, array $hours): array
+    {
+        date_default_timezone_set('Europe/Paris');
+
+        $pause = $this->config['pause_time'];
+        $startLimit = $this->config['start_limit_minutes'];
+        $endLimit = $this->config['end_limit_minutes'];
+        $noonBreakStart = $this->config['noon_break_start'];
+        $noonBreakEnd = $this->config['noon_break_end'];
+        $noonMinimumBreak = $this->config['noon_minimum_break'];
+
+        $currentDate = date('d-m-Y');
+        $currentTime = date('H:i');
+
+        $effectiveMinutes = 0;
+        $nbHours = count($hours);
+        $morningPauseAdded = false;
+        $afternoonPauseAdded = false;
+
+        $morningBreakMinutes = 0;
+        $noonBreakMinutes = 0;
+        $afternoonBreakMinutes = 0;
+
+        // Calculate all breaks in the day
+        for ($i = 1; $i < $nbHours - 1; $i += 2) {
+            $breakStart = explode(':', $hours[$i]);
+            $breakEnd = explode(':', $hours[$i + 1]);
+            $breakStartMinutes = intval($breakStart[0]) * 60 + intval($breakStart[1]);
+            $breakEndMinutes = intval($breakEnd[0]) * 60 + intval($breakEnd[1]);
+            $breakDuration = $breakEndMinutes - $breakStartMinutes;
+
+            // Classify break
+            if ($breakStartMinutes < $noonBreakStart) {
+                $morningBreakMinutes += $breakDuration;
+            } elseif ($breakStartMinutes >= $noonBreakStart && $breakEndMinutes <= $noonBreakEnd) {
+                $noonBreakMinutes += $breakDuration;
+            } else {
+                $afternoonBreakMinutes += $breakDuration;
+            }
+        }
+
+        // Special case for current day with odd number of hours
+        if ($date === $currentDate && $nbHours % 2 !== 0) {
+            $start = explode(':', $hours[$nbHours - 1]);
+            $end = explode(':', $currentTime);
+
+            $startMinutes = max(min(intval($start[0]) * 60 + intval($start[1]), $endLimit), $startLimit);
+            $endMinutes = max(min(intval($end[0]) * 60 + intval($end[1]), $endLimit), $startLimit);
+
+            $effectiveMinutes += $endMinutes - $startMinutes;
+
+            if ($endMinutes >= $this->config['morning_break_threshold'] && !$morningPauseAdded) {
+                $morningPauseAdded = true;
+            }
+            if ($endMinutes >= $this->config['afternoon_break_threshold'] && !$afternoonPauseAdded) {
+                $afternoonPauseAdded = true;
+            }
+        }
+
+        // Calculate effective hours from work periods
+        for ($i = 0; $i < $nbHours - 1; $i += 2) {
+            $start = explode(':', $hours[$i]);
+            $end = explode(':', $hours[$i + 1]);
+
+            $startMinutes = max(min(intval($start[0]) * 60 + intval($start[1]), $endLimit), $startLimit);
+            $endMinutes = max(min(intval($end[0]) * 60 + intval($end[1]), $endLimit), $startLimit);
+
+            $effectiveMinutes += $endMinutes - $startMinutes;
+
+            if ($endMinutes >= $this->config['morning_break_threshold'] && !$morningPauseAdded) {
+                $morningPauseAdded = true;
+            }
+            if ($endMinutes >= $this->config['afternoon_break_threshold'] && !$afternoonPauseAdded) {
+                $afternoonPauseAdded = true;
+            }
+        }
+
+        // Calculate paid hours
+        $paidMinutes = $effectiveMinutes;
+        $effectiveToPaid = [];
+
+        if ($morningPauseAdded) {
+            $paidMinutes += $pause;
+            $effectiveToPaid[] = sprintf("+ %s => morning break", $this->formatMinutes($pause));
+        }
+        if ($afternoonPauseAdded) {
+            $paidMinutes += $pause;
+            $effectiveToPaid[] = sprintf("+ %s => afternoon break", $this->formatMinutes($pause));
+        }
+
+        // Apply noon minimum break rule
+        $noonBreakDuration = $this->calculateNoonBreak($hours, $noonBreakStart, $noonBreakEnd);
+        if ($noonBreakDuration !== null && $noonBreakDuration < $noonMinimumBreak) {
+            $gainedMinutes = $noonMinimumBreak - $noonBreakDuration;
+            $totalBonus = 0;
+            if ($morningPauseAdded) $totalBonus += $pause;
+            if ($afternoonPauseAdded) $totalBonus += $pause;
+
+            $deduction = min($gainedMinutes, $totalBonus);
+            $paidMinutes -= $deduction;
+            $effectiveToPaid[] = sprintf(
+                "- %s => noon break => %s (minimum) - %s (noon break)",
+                $this->formatMinutes($deduction),
+                $this->formatMinutes($noonMinimumBreak),
+                $this->formatMinutes($noonBreakDuration)
+            );
+        }
+
+        return [
+            'hours' => $hours,
+            'breaks' => [
+                'morning' => $this->formatMinutes($morningBreakMinutes),
+                'noon' => $this->formatMinutes($noonBreakMinutes),
+                'afternoon' => $this->formatMinutes($afternoonBreakMinutes)
+            ],
+            'effective_to_paid' => $effectiveToPaid,
+            'effective' => $this->formatMinutes($effectiveMinutes),
+            'paid' => $this->formatMinutes($paidMinutes)
+        ];
+    }
+
+    /**
+     * Calculate weekly data structure from merged hours
+     * @param array $mergedHours Result from mergeHoursByDay()
+     * @return array Weekly structure with days, breaks, and totals
+     */
+    public function calculateWeeklyData(array $mergedHours): array
+    {
+        $weeks = [];
+
+        foreach ($mergedHours as $date => $hours) {
+            $weekKey = $this->getWeekKey($date);
+
+            if (!isset($weeks[$weekKey])) {
+                $weeks[$weekKey] = [
+                    'days' => [],
+                    'total_effective' => 0,
+                    'total_paid' => 0
+                ];
+            }
+
+            $dailyDetails = $this->calculateDailyDetails($date, $hours);
+            $weeks[$weekKey]['days'][$date] = $dailyDetails;
+
+            // Add to weekly totals (convert HH:MM to minutes)
+            $effectiveParts = explode(':', $dailyDetails['effective']);
+            $paidParts = explode(':', $dailyDetails['paid']);
+
+            $weeks[$weekKey]['total_effective'] += intval($effectiveParts[0]) * 60 + intval($effectiveParts[1]);
+            $weeks[$weekKey]['total_paid'] += intval($paidParts[0]) * 60 + intval($paidParts[1]);
+        }
+
+        // Convert totals back to HH:MM format
+        foreach ($weeks as $weekKey => $weekData) {
+            $weeks[$weekKey]['total_effective'] = $this->formatMinutes($weekData['total_effective']);
+            $weeks[$weekKey]['total_paid'] = $this->formatMinutes($weekData['total_paid']);
+        }
+
+        return $weeks;
+    }
 }

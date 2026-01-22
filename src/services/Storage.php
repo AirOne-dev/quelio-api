@@ -3,12 +3,9 @@
 class Storage
 {
     // Storage keys constants
-    private const KEY_HOURS = 'hours';
-    private const KEY_TOTAL_EFFECTIVE = 'total_effective';
-    private const KEY_TOTAL_PAID = 'total_paid';
-    private const KEY_LAST_SAVE = 'last_save';
+    private const KEY_WEEKS = 'weeks';
     private const KEY_PREFERENCES = 'preferences';
-    private const KEY_SESSION_TOKEN = 'session_token';
+    private const KEY_TOKEN = 'token';
 
     private string $dataFile;
     private bool $debugMode;
@@ -97,13 +94,11 @@ class Storage
     /**
      * Save user data
      * @param string $username
-     * @param array $hours
-     * @param string $totalEffective
-     * @param string $totalPaid
+     * @param array $weeks Weekly data structure
      * @param string|null $token
      * @return bool
      */
-    public function saveUserData(string $username, array $hours, string $totalEffective, string $totalPaid, ?string $token = null): bool
+    public function saveUserData(string $username, array $weeks, ?string $token = null): bool
     {
         try {
             // Ensure directory exists and is writable
@@ -115,15 +110,12 @@ class Storage
 
             // Preserve existing preferences and token if they exist
             $existingPreferences = $allData[$username][self::KEY_PREFERENCES] ?? [];
-            $existingToken = $allData[$username][self::KEY_SESSION_TOKEN] ?? null;
+            $existingToken = $allData[$username][self::KEY_TOKEN] ?? null;
 
             $allData[$username] = [
-                self::KEY_HOURS => $hours,
-                self::KEY_TOTAL_EFFECTIVE => $totalEffective,
-                self::KEY_TOTAL_PAID => $totalPaid,
-                self::KEY_LAST_SAVE => date('d/m/Y H:i:s'),
                 self::KEY_PREFERENCES => $existingPreferences,
-                self::KEY_SESSION_TOKEN => $token ?? $existingToken
+                self::KEY_TOKEN => $token ?? $existingToken,
+                self::KEY_WEEKS => $weeks
             ];
 
             return $this->saveAllData($allData);
@@ -151,10 +143,9 @@ class Storage
             // Initialize user data if doesn't exist
             if (!isset($allData[$username])) {
                 $allData[$username] = [
-                    self::KEY_HOURS => [],
-                    self::KEY_TOTAL_EFFECTIVE => '00:00',
-                    self::KEY_TOTAL_PAID => '00:00',
-                    self::KEY_LAST_SAVE => date('d/m/Y H:i:s')
+                    self::KEY_PREFERENCES => [],
+                    self::KEY_TOKEN => null,
+                    self::KEY_WEEKS => []
                 ];
             }
 
@@ -200,7 +191,7 @@ class Storage
             }
 
             // Remove the token
-            unset($allData[$username][self::KEY_SESSION_TOKEN]);
+            unset($allData[$username][self::KEY_TOKEN]);
 
             return $this->saveAllData($allData);
         } catch (\Throwable $e) {
